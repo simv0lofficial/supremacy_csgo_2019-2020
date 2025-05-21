@@ -94,9 +94,62 @@ namespace math {
 
 	__forceinline float segment_to_segment( const vec3_t& s1, const vec3_t& s2, const vec3_t& k1, const vec3_t& k2 );
 
-	__forceinline bool line_vs_bb( const vec3_t& src, const vec3_t& dst, const vec3_t& min, const vec3_t& max );
+	__forceinline bool intersect_line_with_bb( const vec3_t& src, const vec3_t& dst, const vec3_t& min, const vec3_t& max );
 
 	__forceinline bool to_screen( const vec3_t& world, const vec2_t& screen_size, const mat4x4_t& matrix, vec2_t& out );
+
+	template <class t>
+	__forceinline t lerp(float percent, t const& a, t const& b)	{
+		return a + (b - a) * percent;
+	}
+
+	template < class T >
+	__forceinline T anim_lerp(const T& current, const T& target, const int progress, const int maximum) {
+		return current + (((target - current) / maximum) * progress);
+	}
+
+	template < typename T >
+	__forceinline T hermite_spline(
+		T p1,
+		T p2,
+		T d1,
+		T d2,
+		float t) {
+		float t_sqr = t * t;
+		float t_cube = t * t_sqr;
+
+		float b1 = 2.f * t_cube - 3.f * t_sqr + 1.f;
+		float b2 = 1.f - b1;
+		float b3 = t_cube - 2 * t_sqr + t;
+		float b4 = t_cube - t_sqr;
+
+		T output;
+		output = p1 * b1;
+		output += p2 * b2;
+		output += d1 * b3;
+		output += d2 * b4;
+
+		return output;
+	}
+
+	template < typename T >
+	__forceinline T hermite_spline(T p0, T p1, T p2, float t) {
+		return hermite_spline(p1, p2, p1 - p0, p2 - p1, t);
+	}
+
+	__forceinline float simple_spline(float value) {
+		float value_squared = value * value;
+		return (3 * value_squared - 2 * value_squared * value);
+	}
+
+	__forceinline float simple_spline_remap_val_clamped(float val, float a, float b, float c, float d) {
+		if (a == b)
+			return val >= b ? d : c;
+
+		float c_val = (val - a) / (b - a);
+		c_val = std::clamp(c_val, 0.f, 1.f);
+		return c + (d - c) * simple_spline(c_val);
+	}
 }
 
 #include "impl/math.inl"

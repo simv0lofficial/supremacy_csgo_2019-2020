@@ -226,20 +226,20 @@ namespace supremacy::valve {
 		);
 	}
 
-	__forceinline bool c_entity::breakable( ) {
-		using fn_t = bool( __thiscall* )( decltype( this ) );
+	__forceinline bool c_entity::breakable() {
+		using fn_t = bool(__thiscall*)(decltype(this));
 
-		if ( reinterpret_cast< fn_t >( g_context->addresses( ).m_breakable )( this ) )
+		if (reinterpret_cast<fn_t>(g_context->addresses().m_breakable)(this))
 			return true;
 
-		const auto cc = client_class( );
-		if ( !cc )
+		const auto cc = client_class();
+		if (!cc)
 			return false;
 
-		return ( *reinterpret_cast< const std::uint32_t* >( cc->m_network_name ) == 'erBC'
-			&& *reinterpret_cast< const std::uint32_t* >( cc->m_network_name + 7 ) == 'Selb' )
-			|| ( *reinterpret_cast< const std::uint32_t* >( cc->m_network_name ) == 'saBC'
-				&& *reinterpret_cast< const std::uint32_t* >( cc->m_network_name + 7 ) == 'ytit' );
+		return (*reinterpret_cast<const std::uint32_t*>(cc->m_network_name) == 'erBC'
+			&& *reinterpret_cast<const std::uint32_t*>(cc->m_network_name + 7) == 'Selb')
+			|| (*reinterpret_cast<const std::uint32_t*>(cc->m_network_name) == 'saBC'
+				&& *reinterpret_cast<const std::uint32_t*>(cc->m_network_name + 7) == 'ytit');
 	}
 
 	__forceinline int& c_entity::team( ) {

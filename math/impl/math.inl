@@ -265,7 +265,7 @@ namespace math {
 		return ( w + u * sc - v * tc ).length( );
 	}
 
-	__forceinline bool line_vs_bb( const vec3_t& src, const vec3_t& dst, const vec3_t& min, const vec3_t& max ) {
+	__forceinline bool intersect_line_with_bb( const vec3_t& src, const vec3_t& dst, const vec3_t& min, const vec3_t& max ) {
 		auto inside = true;
 		char quadrant[3];
 		int i;

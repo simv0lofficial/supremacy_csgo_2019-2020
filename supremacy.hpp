@@ -1,6 +1,6 @@
 #pragma once
 
-#define TWENTYTWENTY false
+#define TWENTYTWENTY TRUE
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #define _HAS_EXCEPTIONS 0

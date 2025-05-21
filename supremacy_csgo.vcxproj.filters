@@ -33,6 +33,7 @@
     <ClCompile Include="util\impl\util.cpp" />
     <ClCompile Include="dependencies\bass\dll.cpp" />
     <ClCompile Include="dependencies\bass\dll_image.cpp" />
+    <ClCompile Include="dependencies\threading\new_threads.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="supremacy.hpp" />
@@ -91,6 +92,7 @@
     <ClInclude Include="dependencies\syscall.hpp" />
     <ClInclude Include="dependencies\defs.hpp" />
     <ClInclude Include="dependencies\fnvhash.hpp" />
+    <ClInclude Include="dependencies\threading\new_threads.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="valve\entities\impl\entities.inl" />

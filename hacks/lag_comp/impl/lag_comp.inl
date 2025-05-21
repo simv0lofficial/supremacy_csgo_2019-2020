@@ -9,17 +9,14 @@ namespace supremacy::hacks {
 
 		m_origin = player->origin();
 		m_abs_origin = player->abs_origin();
-
 		m_obb_min = player->obb_min();
 		m_obb_max = player->obb_max();
 
 		const auto& bone_accessor = player->bone_accessor();
-
 		m_readable_bones = bone_accessor.m_readable_bones;
 		m_writable_bones = bone_accessor.m_writable_bones;
 
 		const auto& bone_cache = player->bone_cache();
-
 		std::memcpy(
 			m_bones.data(),
 			bone_cache.m_mem.m_ptr,
@@ -27,21 +24,16 @@ namespace supremacy::hacks {
 		);
 
 		m_bones_count = bone_cache.m_size;
-
 		m_mdl_bone_counter = player->most_recent_model_bone_counter();
 	}
 
 	__forceinline void lag_backup_t::restore(valve::c_player* const player) const {
 		player->origin() = m_origin;
-
 		player->set_abs_origin(m_abs_origin);
-
 		player->set_collision_bounds(m_obb_min, m_obb_max);
-
 		player->set_abs_angles({ 0.f, m_foot_yaw, 0.f });
 
 		auto& bone_accessor = player->bone_accessor();
-
 		bone_accessor.m_readable_bones = m_readable_bones;
 		bone_accessor.m_writable_bones = m_writable_bones;
 
@@ -59,14 +51,11 @@ namespace supremacy::hacks {
 	) const {
 		if (!only_anim) {
 			player->origin() = m_origin;
-
 			player->set_abs_origin(m_origin);
-
 			player->set_collision_bounds(m_obb_min, m_obb_max);
 		}
 
 		const auto& anim_side = anim_index < 3 ? m_sides.at(anim_index) : m_low_sides.at(anim_index - 3);
-
 		player->set_abs_angles({ 0.f, anim_side.m_foot_yaw, 0.f });
 
 		std::memcpy(
@@ -87,20 +76,22 @@ namespace supremacy::hacks {
 			|| m_shifting)
 			return false;
 
-		if (g_lag_comp->calc_time_delta(m_sim_time) > 0.2f)
-			return false;
-
 		const auto& net_info = g_context->net_info();
 
 		int delay{};
 		if (g_movement->should_fake_duck())
 			delay = 15 - valve::g_client_state->m_choked_cmds;
 
-		int dead_time = (int)(valve::to_time(net_info.m_server_tick + delay) - g_context->cvars().m_sv_maxunlag->get_float());
-		if (m_sim_time < (float)dead_time)
+		const auto last_server_tick = net_info.m_server_tick + delay;
+		const auto rtt = net_info.m_latency.m_in + net_info.m_latency.m_out;
+		const auto possible_future_tick = last_server_tick + valve::to_ticks(rtt) + 8;
+		const auto sv_maxunlag = g_context->cvars().m_sv_maxunlag->get_float();
+		const auto deadtime = static_cast<int>(valve::to_time(last_server_tick) + rtt - sv_maxunlag);
+
+		if (m_sim_time <= static_cast<float>(deadtime) || valve::to_ticks(m_sim_time + net_info.m_lerp) > possible_future_tick)
 			return false;
 
-		return true;
+		return g_lag_comp->calc_time_delta(m_sim_time) < 0.2f;
 	}
 
 	__forceinline void player_entry_t::reset() {
@@ -108,7 +99,6 @@ namespace supremacy::hacks {
 
 		m_alive_loop_cycle = -1.f;
 		m_highest_simtime = -1.f;
-		m_last_reliable_angle = {};
 		m_render_origin = {};
 		m_misses = 0;
 		m_prev_side = 0;

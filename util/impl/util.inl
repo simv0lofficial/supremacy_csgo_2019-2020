@@ -25,8 +25,7 @@ namespace util {
 			if (intersections_low >= 3)
 				return ("normal | strict");
 
-			if (intersections_low == 2)
-				return ("normal");
+			return ("normal");
 		}
 
 		if (intersections_low >= 3)

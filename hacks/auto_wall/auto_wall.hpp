@@ -4,7 +4,6 @@ namespace supremacy::hacks {
 	struct pen_data_t {
 		valve::c_player* m_hit_player{};
 		int					m_dmg{}, m_hitbox{}, m_hitgroup{}, m_remaining_pen{};
-		bool did_penetrate{};
 	};
 
 	class c_auto_wall {

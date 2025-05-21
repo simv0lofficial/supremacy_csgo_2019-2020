@@ -3,7 +3,7 @@
 namespace supremacy::hacks {
 	class c_anim_sync {
 	private:
-		float get_local_cycle_increment(valve::c_player* player) const;
+		float compute_server_playback_rate( valve::c_player* player ) const;
 
 		void update(
 			const player_entry_t& entry, lag_record_t* const current,

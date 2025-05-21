@@ -73,9 +73,9 @@ namespace supremacy::hacks {
 	class c_aim_bot {
 	private:
 		std::size_t calc_points_count(const int hitgroups, const int multi_points) const;
-	public:
+
 		void scan_point(const aim_target_t& target, aim_point_t& point, const bool ignore_dmg) const;
-	private:
+
 		void scan_center_points(aim_target_t& target, const int hitgroups) const;
 
 		void calc_capsule_points(
@@ -93,19 +93,21 @@ namespace supremacy::hacks {
 			aim_target_t& target, const valve::studio_hitbox_t* const hitbox,
 			const int index, const mat3x4_t& matrix, float scale
 		) const;
-
+	public:
 		void scan_points(
 			aim_target_t& target, const int hitgroups, const int multi_points,
 			const bool trace, const bool ignore_dmg
 		) const;
-
-		bool select_points(aim_target_t& target) const;
-
+	private:
 		void player_move(extrapolation_data_t& data) const;
-
+	public:
+		bool select_points(aim_target_t& target) const;
+	private:
 		std::optional< aim_record_t > extrapolate(const player_entry_t& entry) const;
 
 		std::optional< aim_record_t > select_latest_record(const player_entry_t& entry) const;
+
+		std::optional<aim_record_t> select_oldest_record(const player_entry_t& entry) const;
 
 		std::optional< aim_record_t > select_record(const player_entry_t& entry) const;
 
@@ -113,36 +115,46 @@ namespace supremacy::hacks {
 
 		void find_targets();
 
-		void scan_targets();
-
 		aim_target_t* select_target(const int cmd_number);
 
-	public:
 		vec2_t calc_spread_angle(
 			const int bullets, const valve::e_item_index item_index,
 			const float recoil_index, const std::size_t i
 		) const;
-	private:
 
 		int calc_hit_chance(
 			const aim_target_t* const target, const qangle_t& angle, const aim_point_t* const aim_point
 		) const;
 
+		struct cfg_t {
+			bool	m_enabled{}, m_resolver{}, m_auto_scope{},
+				m_scale_dmg_on_hp{}, m_static_point_scale{};
+
+			int		m_body_scale{}, m_head_scale{},
+				m_accuracy_boost{}, m_hit_chance{},
+				m_sort_type{}, m_auto_stop_type{},
+				m_between_shots_auto_stop_type{}, m_auto_stop_conditions{},
+				m_safe_point_type{}, m_safe_point_conditions{},
+				m_fake_lag_correction{}, m_baim_conditions{},
+				m_min_dmg{}, m_pen_min_dmg{}, m_min_dmg_override{},
+				m_min_dmg_override_key{}, m_hitgroups{}, m_multi_points{},
+				m_force_safe_point_key{}, m_max_misses_safe_point{}, m_max_misses_baim{};
+		};
+
 		std::array< std::vector< int >, 6u >	m_hitgroups{
 			std::vector< int >{ 0 },
-			{ 4, 5, 6 },
-			{ 2, 3 },
+			{ 2, 4, 5, 6 },
+			{ 3 },
 			{ 13, 14, 15, 16, 17, 18 },
 			{ 7, 8, 9, 10 },
 			{ 11, 12 }
 		};
+		bool									m_is_peeking{};
 
 		aim_last_target_t						m_last_target{};
-
+	public:
 		std::vector< aim_target_t >				m_targets{};
 
-		bool									m_is_peeking{};
-	public:
 		void on_create_move(valve::user_cmd_t& user_cmd);
 
 		bool peek_correction() const;

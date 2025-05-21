@@ -70,7 +70,6 @@ namespace supremacy::hacks {
 					}
 				}
 				else {
-
 					shot.m_target.m_lag_record->restore(shot.m_target.m_entry->m_player, shot.m_target.m_lag_record->m_side);
 
 					valve::trace_t trace{};
@@ -116,44 +115,67 @@ namespace supremacy::hacks {
 						}
 					}
 					else {
-						if (shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
+						++shot.m_target.m_entry->m_misses;
+
+						if ((shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client)
+							|| shot.m_target.m_point.m_intersections >= 3) {
 #ifdef ALPHA
 							util::g_notify->print_logo();
 							util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
-							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
+							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown reason\n"));
 #else
 #ifdef _DEBUG
 							util::g_notify->print_logo();
 							util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
-							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
+							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown reason\n"));
 #else
 							if (g_context->debug_build) {
 								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
-								util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
+								util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown reason\n"));
 							}
 #endif
 #endif
 						}
 						else {
+							if (!shot.m_target.m_lag_record->m_trying_to_resolve) {
 #ifdef ALPHA
-							util::g_notify->print_logo();
-							util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
-							util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+								util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("animation desync\n"));
 #else
 #ifdef _DEBUG
-							util::g_notify->print_logo();
-							util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
-							util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+								util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("animation desync\n"));
 #else
-							if (g_context->debug_build) {
+								if (g_context->debug_build) {
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+									util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("animation desync\n"));
+								}
+#endif
+#endif
+							}
+							else {
+#ifdef ALPHA
 								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
 								util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
-							}
+#else
+#ifdef _DEBUG
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+								util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+#else
+								if (g_context->debug_build) {
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+									util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+								}
 #endif
 #endif
-							++shot.m_target.m_entry->m_misses;
+							}							
 
 							if (shot.m_target.m_lag_record->m_trying_to_resolve
 								&& shot.m_target.m_point.m_intersections < 3

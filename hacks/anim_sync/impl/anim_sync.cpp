@@ -1,21 +1,21 @@
 #include "../../../supremacy.hpp"
 
 namespace supremacy::hacks {
-	float c_anim_sync::get_local_cycle_increment(valve::c_player* player) const {
-		int move_sequence = player->lookup_sequence(xorstr_("move"));
+	float c_anim_sync::compute_server_playback_rate( valve::c_player* player ) const {
+		int move_sequence = player->lookup_sequence( xorstr_( "move" ) );
 
 		auto feet_cycle_rate = 0.f;
-		auto speed = std::fmin(player->anim_state()->m_speed_2d, 260.f);
-		if (speed > 0.f) {
-			auto sequence_cycle_rate = player->get_sequence_cycle_rate(player->mdl_ptr(), move_sequence);
+		auto speed = std::fmin( player->anim_state( )->m_speed_2d, 260.f );
+		if ( speed > 0.f ) {
+			auto sequence_cycle_rate = player->get_sequence_cycle_rate( player->mdl_ptr( ), move_sequence );
 
-			auto sequence_move_dist = player->get_sequence_move_dist(player->mdl_ptr(), move_sequence);
-			sequence_move_dist *= 1.f / (1.f / sequence_cycle_rate);
-			if (sequence_move_dist <= 0.001f)
+			auto sequence_move_dist = player->get_sequence_move_dist( player->mdl_ptr( ), move_sequence );
+			sequence_move_dist *= 1.f / ( 1.f / sequence_cycle_rate );
+			if ( sequence_move_dist <= 0.001f )
 				sequence_move_dist = 0.001f;
 
 			auto speed_multiplier = speed / sequence_move_dist;
-			feet_cycle_rate = (1.f - (player->anim_state()->m_walk_to_run_transition * 0.15f)) * (speed_multiplier * sequence_cycle_rate);
+			feet_cycle_rate = ( 1.f - ( player->anim_state( )->m_walk_to_run_transition * 0.15f ) ) * ( speed_multiplier * sequence_cycle_rate );
 		}
 
 		return feet_cycle_rate * valve::g_global_vars->m_interval_per_tick;
@@ -38,8 +38,6 @@ namespace supremacy::hacks {
 				m_interpolation_amount{ valve::g_global_vars->m_interpolation_amount },
 				m_duck_amount{ player->duck_amount() },
 				m_lby{ player->lby() },
-				m_feet_cycle{ player->anim_state()->m_feet_cycle },
-				m_feet_weight{ player->anim_state()->m_feet_weight },
 				m_eflags{ player->eflags() },
 				m_flags{ player->flags() },
 				m_velocity{ player->velocity() },
@@ -58,8 +56,6 @@ namespace supremacy::hacks {
 			__forceinline void restore_player_data(valve::c_player* const player) const {
 				player->duck_amount() = m_duck_amount;
 				player->lby() = m_lby;
-				player->anim_state()->m_feet_cycle = m_feet_cycle;
-				player->anim_state()->m_feet_weight = m_feet_weight;
 				player->eflags() = m_eflags;
 				player->flags() = m_flags;
 				player->velocity() = m_velocity;
@@ -68,7 +64,7 @@ namespace supremacy::hacks {
 
 			float m_real_time{}, m_cur_time{}, m_frame_time{},
 				m_absolute_frame_time{}, m_interpolation_amount{},
-				m_duck_amount{}, m_lby{}, m_feet_cycle{}, m_feet_weight{};
+				m_duck_amount{}, m_lby{};
 			int m_frame_count{}, m_tick_count{};
 			std::size_t			m_eflags{};
 			valve::e_ent_flags	m_flags{};
@@ -84,37 +80,44 @@ namespace supremacy::hacks {
 			auto prev_update_time = current->m_sim_time - valve::g_global_vars->m_interval_per_tick;
 
 			if (current->m_flags & valve::e_ent_flags::on_ground) {
-				entry.m_player->anim_state()->m_landing = false;
-				entry.m_player->anim_state()->m_on_ground = true;
-
-				auto land_time = 0.f;
-				if (cur_land_or_climb_layer.m_cycle > 0.f
-					&& cur_land_or_climb_layer.m_playback_rate > 0.f) {
-					if (land_activity == 988
-						|| land_activity == 989) {
-						land_time = cur_land_or_climb_layer.m_cycle / cur_land_or_climb_layer.m_playback_rate;
-
-						if (land_time > 0.f)
-							prev_update_time = current->m_sim_time - land_time;
+				if (land_activity == 988
+					|| land_activity == 989) {
+					const auto land_time = current->m_sim_time - cur_land_or_climb_layer.m_cycle / cur_land_or_climb_layer.m_playback_rate;
+					if (land_time == prev_update_time) {
+						entry.m_player->anim_state()->m_on_ground = true;
+						entry.m_player->anim_state()->m_landing = true;
+						entry.m_player->anim_state()->m_duck_additional = 0.f;
 					}
-				}
+					else if (land_time - valve::g_global_vars->m_interval_per_tick == prev_update_time) {
+						entry.m_player->anim_state()->m_on_ground = false;
+						entry.m_player->anim_state()->m_landing = false;
+						entry.m_player->anim_state()->m_duck_additional = 0.f;
+					}
 
-				current->m_velocity.z = 0.f;
+					auto time_since_in_air = (cur_jump_or_fall_layer.m_cycle - cur_land_or_climb_layer.m_cycle);
+					if (time_since_in_air < 0.f)
+						time_since_in_air += 1.f;
+
+					entry.m_player->anim_state()->m_time_since_in_air = time_since_in_air / cur_jump_or_fall_layer.m_playback_rate;
+
+					if (land_time < prev_update_time && land_time > entry.m_player->anim_state()->m_prev_update_time)
+						prev_update_time = land_time;
+				}
 			}
-			else {
-				auto jump_time = 0.f;
-				if (cur_jump_or_fall_layer.m_cycle > 0.f
-					&& cur_jump_or_fall_layer.m_playback_rate > 0.f) {
-					if (jump_activity == 985) {
-						jump_time = cur_jump_or_fall_layer.m_cycle / cur_jump_or_fall_layer.m_playback_rate;
+			else if (jump_activity == 985) {
+				auto time_since_in_air = cur_jump_or_fall_layer.m_cycle / cur_jump_or_fall_layer.m_playback_rate;
 
-						if (jump_time > 0.f)
-							prev_update_time = current->m_sim_time - jump_time;
-					}
-				}
+				const auto jump_time = current->m_sim_time - time_since_in_air;
+				if (jump_time <= prev_update_time)
+					entry.m_player->anim_state()->m_on_ground = false;
+				else if (jump_time - valve::g_global_vars->m_interval_per_tick)
+					entry.m_player->anim_state()->m_on_ground = true;
 
-				entry.m_player->anim_state()->m_on_ground = false;
-				entry.m_player->anim_state()->m_time_since_in_air = jump_time - valve::g_global_vars->m_interval_per_tick;
+				if (jump_time < prev_update_time && jump_time > entry.m_player->anim_state()->m_prev_update_time)
+					prev_update_time = jump_time;
+
+				entry.m_player->anim_state()->m_time_since_in_air = time_since_in_air - valve::g_global_vars->m_interval_per_tick;
+				entry.m_player->anim_state()->m_landing = false;
 			}
 
 			entry.m_player->anim_state()->m_prev_update_time = prev_update_time;
@@ -148,11 +151,11 @@ namespace supremacy::hacks {
 			&& current->m_sim_ticks > 1) {
 			auto activity_tick = 0;
 			auto activity_type = 0;
-
-			const auto& prev_land_or_climb_layer = previous->m_anim_layers.at(5u);
-
+						
 			if (land_activity == 988
 				|| land_activity == 989) {
+				const auto& prev_land_or_climb_layer = previous->m_anim_layers.at(5u);
+
 				if (cur_land_or_climb_layer.m_weight > 0.f
 					&& prev_land_or_climb_layer.m_weight <= 0.f
 					&& cur_land_or_climb_layer.m_cycle > prev_land_or_climb_layer.m_cycle) {
@@ -164,10 +167,10 @@ namespace supremacy::hacks {
 					}
 				}
 			}
-
-			const auto& prev_jump_or_fall_layer = previous->m_anim_layers.at(4u);
-
+						
 			if (jump_activity == 985) {
+				const auto& prev_jump_or_fall_layer = previous->m_anim_layers.at(4u);
+
 				if (cur_jump_or_fall_layer.m_weight > 0.f
 					&& cur_jump_or_fall_layer.m_playback_rate > 0.f
 					&& cur_jump_or_fall_layer.m_cycle < prev_jump_or_fall_layer.m_cycle) {
@@ -194,15 +197,21 @@ namespace supremacy::hacks {
 					entry.m_player->duck_amount() = current->m_duck_amount;
 					entry.m_player->flags() = current->m_flags;
 				}
-				else {
-					const auto lerp = 1.f - (current->m_sim_time - cur_sim_time) / (current->m_sim_time - previous->m_sim_time);
-					entry.m_player->velocity() = entry.m_player->abs_velocity() = current->m_velocity * lerp + previous->m_velocity * (1.f - lerp);
-					entry.m_player->duck_amount() = current->m_duck_amount * lerp + previous->m_duck_amount * (1.f - lerp);
+				else {				
+					if (penultimate) {
+						const auto frac = float(sim_tick + 1) / float(current->m_sim_ticks);
+						entry.m_player->velocity() = entry.m_player->abs_velocity() = math::hermite_spline(penultimate->m_velocity, previous->m_velocity, current->m_velocity, frac);
+						entry.m_player->duck_amount() = math::hermite_spline(penultimate->m_duck_amount, previous->m_duck_amount, current->m_duck_amount, frac);
+					}
+					else {
+						entry.m_player->velocity() = entry.m_player->abs_velocity() = math::anim_lerp(previous->m_velocity, current->m_velocity, sim_tick + 1, current->m_sim_ticks);
+						entry.m_player->duck_amount() = math::anim_lerp(previous->m_duck_amount, current->m_duck_amount, sim_tick + 1, current->m_sim_ticks);
+					}
 
 					if (activity_type == 1) {
-						if (cur_sim_tick == activity_tick - 1)
+						if (valve::g_global_vars->m_frame_count == activity_tick - 1)
 							entry.m_player->flags() |= valve::e_ent_flags::on_ground;
-						else if (cur_sim_tick == activity_tick) {
+						else if (valve::g_global_vars->m_frame_count == activity_tick) {
 							entry.m_player->anim_layers().at(4u).m_cycle = 0.f;
 							entry.m_player->anim_layers().at(4u).m_weight = 0.f;
 							entry.m_player->anim_layers().at(4u).m_playback_rate = entry.m_player->get_layer_sequence_cycle_rate(&current->m_anim_layers.at(4u), cur_jump_or_fall_layer.m_sequence);
@@ -210,9 +219,9 @@ namespace supremacy::hacks {
 						}
 					}
 					else if (activity_type == 2) {
-						if (cur_sim_tick == activity_tick - 1)
+						if (valve::g_global_vars->m_frame_count == activity_tick - 1)
 							entry.m_player->flags() &= ~valve::e_ent_flags::on_ground;
-						else if (cur_sim_tick == activity_tick) {
+						else if (valve::g_global_vars->m_frame_count == activity_tick) {
 							entry.m_player->anim_layers().at(5u).m_cycle = 0.f;
 							entry.m_player->anim_layers().at(5u).m_weight = 0.f;
 							entry.m_player->anim_layers().at(5u).m_playback_rate = entry.m_player->get_layer_sequence_cycle_rate(&current->m_anim_layers.at(5u), cur_land_or_climb_layer.m_sequence);
@@ -226,43 +235,32 @@ namespace supremacy::hacks {
 					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y, 360.f);
 					break;
 				case 1:
-					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y - 120.f, 360.f);
+					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_min_body_yaw * 2.f, 360.f);
 					break;
 				case 2:
-					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + 120.f, 360.f);
+					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_max_body_yaw * 2.f, 360.f);
 					break;
 				case 3:
-					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y - 30.f, 360.f);
+					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_min_body_yaw * 0.5f, 360.f);
 					break;
 				case 4:
-					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + 30.f, 360.f);
+					entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_max_body_yaw * 0.5f, 360.f);
 					break;
-				}
-
-				if (current->m_shot) {
-					entry.m_player->eye_angles() = entry.m_last_reliable_angle;
-
-					if (current->m_weapon
-						&& current->m_last_shot_time <= cur_sim_time)
-						entry.m_player->eye_angles() = current->m_eye_angles;
 				}
 
 				entry.m_player->eflags() &= ~0x1000u;
 
-				entry.m_player->anim_state()->m_prev_update_frame = valve::g_global_vars->m_frame_count - 1;
+				entry.m_player->anim_state()->m_prev_update_frame = valve::g_global_vars->m_tick_count - 1;
 
 				entry.m_player->client_side_anim() = g_context->allow_anim_update() = true;
 				entry.m_player->update_client_side_anim();
 				entry.m_player->client_side_anim() = g_context->allow_anim_update() = false;
-
-				backup.restore_globals(entry.m_player);
-				backup.restore_player_data(entry.m_player);
 			}
 		}
 		else {
 			valve::g_global_vars->m_real_time = valve::g_global_vars->m_cur_time = current->m_sim_time;
 			valve::g_global_vars->m_frame_time = valve::g_global_vars->m_absolute_frame_time = valve::g_global_vars->m_interval_per_tick;
-			valve::g_global_vars->m_frame_count = valve::g_global_vars->m_tick_count = valve::to_ticks(current->m_sim_time);
+			valve::g_global_vars->m_frame_count = valve::g_global_vars->m_tick_count = valve::to_ticks(valve::g_global_vars->m_real_time);
 			valve::g_global_vars->m_interpolation_amount = 0.f;
 
 			entry.m_player->velocity() = entry.m_player->abs_velocity() = current->m_velocity;
@@ -272,34 +270,34 @@ namespace supremacy::hacks {
 				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y, 360.f);
 				break;
 			case 1:
-				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y - 120.f, 360.f);
+				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_min_body_yaw * 2.f, 360.f);
 				break;
 			case 2:
-				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + 120.f, 360.f);
+				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_max_body_yaw * 2.f, 360.f);
 				break;
 			case 3:
-				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y - 30.f, 360.f);
+				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_min_body_yaw * 0.5f, 360.f);
 				break;
 			case 4:
-				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + 30.f, 360.f);
+				entry.m_player->anim_state()->m_foot_yaw = std::remainderf(current->m_eye_angles.y + entry.m_player->anim_state()->m_max_body_yaw * 0.5f, 360.f);
 				break;
 			}
 
 			entry.m_player->eflags() &= ~0x1000u;
 
-			entry.m_player->anim_state()->m_prev_update_frame = valve::g_global_vars->m_frame_count - 1;
+			entry.m_player->anim_state()->m_prev_update_frame = valve::g_global_vars->m_tick_count - 1;
 
 			entry.m_player->client_side_anim() = g_context->allow_anim_update() = true;
 			entry.m_player->update_client_side_anim();
 			entry.m_player->client_side_anim() = g_context->allow_anim_update() = false;
-
-			backup.restore_globals(entry.m_player);
-			backup.restore_player_data(entry.m_player);
 		}
+
+		backup.restore_globals(entry.m_player);
+		backup.restore_player_data(entry.m_player);
 
 		auto& cur_anim_side = side < 3 ? current->m_sides.at(side) : current->m_low_sides.at(side - 3);
 		cur_anim_side.m_foot_yaw = entry.m_player->anim_state()->m_foot_yaw;
-		cur_anim_side.m_playback_rate = get_local_cycle_increment(entry.m_player);
+		cur_anim_side.m_playback_rate = compute_server_playback_rate(entry.m_player);
 
 		entry.m_player->anim_layers() = current->m_anim_layers;
 		entry.m_player->set_abs_angles({ 0.f, entry.m_player->anim_state()->m_foot_yaw, 0.f });
@@ -321,6 +319,10 @@ namespace supremacy::hacks {
 		current->m_priority = 5;
 		current->m_side = entry.m_prev_side;
 		current->m_type = 1;
+
+		// todo: simv0l - need check how onetap make this shit
+		//if (math::angle_diff(current->m_sides.at(2).m_foot_yaw, current->m_eye_angles.y) < 0.f)
+		//	std::swap(current->m_sides.at(2).m_foot_yaw, current->m_sides.at(1).m_foot_yaw);		
 
 		switch (entry.m_prev_type) {
 		case 1:
@@ -396,40 +398,46 @@ namespace supremacy::hacks {
 				}
 			}
 		}
-		else {
+		else if (current->m_flags & valve::e_ent_flags::on_ground) {
 		anim_part:
 			if (!entry.m_try_anim_resolver) {
 				current->m_type = 11;
 				goto end;
-			}
+			}						
 
-			const auto negative_delta = abs(current->m_server_rate - current->m_negative_rate);
-			const auto positive_delta = abs(current->m_server_rate - current->m_positive_rate);
-			const auto zero_delta = abs(current->m_server_rate - current->m_zero_rate);
-			const auto low_negative_delta = abs(current->m_server_rate - current->m_low_negative_rate);
+			if ( !( current->m_anim_layers.at( 12u ).m_weight * 1000.f ) )
+				current->m_can_solve_move = static_cast< int >( current->m_anim_layers.at( 6u ).m_weight * 1000.f ) == static_cast< int >( previous->m_anim_layers.at( 6u ).m_weight * 1000.f );
+			
+			if (current->m_processed_velocity
+				|| current->m_can_solve_move) {
+				const auto negative_delta = abs(current->m_server_rate - current->m_negative_rate);
+				const auto positive_delta = abs(current->m_server_rate - current->m_positive_rate);
+				const auto zero_delta = abs(current->m_server_rate - current->m_zero_rate);
+				const auto low_negative_delta = abs(current->m_server_rate - current->m_low_negative_rate);
 
-			auto best_delta = zero_delta;
-			if (best_delta > low_negative_delta) {
-				current->m_priority = 2;
-				current->m_side = entry.m_prev_side = 3;
-				current->m_type = 12;
-				entry.m_prev_type = 3;
-				best_delta = low_negative_delta;
-			}
+				auto best_delta = zero_delta;
+				if (best_delta > low_negative_delta) {
+					current->m_priority = 2;
+					current->m_side = entry.m_prev_side = 3;
+					current->m_type = 12;
+					entry.m_prev_type = 3;
+					best_delta = low_negative_delta;
+				}
 
-			if (best_delta > negative_delta) {
-				current->m_priority = 2;
-				current->m_side = entry.m_prev_side = 1;
-				current->m_type = 12;
-				entry.m_prev_type = 3;
-				best_delta = negative_delta;
-			}
+				if (best_delta > negative_delta) {
+					current->m_priority = 2;
+					current->m_side = entry.m_prev_side = 1;
+					current->m_type = 12;
+					entry.m_prev_type = 3;
+					best_delta = negative_delta;
+				}
 
-			if (best_delta > positive_delta) {
-				current->m_priority = 2;
-				current->m_side = entry.m_prev_side = 2;
-				current->m_type = 12;
-				entry.m_prev_type = 3;
+				if (best_delta > positive_delta) {
+					current->m_priority = 2;
+					current->m_side = entry.m_prev_side = 2;
+					current->m_type = 12;
+					entry.m_prev_type = 3;
+				}
 			}
 		}
 	end:
@@ -443,8 +451,7 @@ namespace supremacy::hacks {
 			current->m_side = 0;
 			current->m_type = 18;
 		}
-		else if ((!(current->m_flags & valve::e_ent_flags::on_ground)
-			&& !(previous->m_flags & valve::e_ent_flags::on_ground))) {
+		else if (!(current->m_flags & valve::e_ent_flags::on_ground)) {
 			current->m_priority = 1;
 			current->m_side = current->m_type == 6 ? 0 : 3;
 			current->m_type = 19;
@@ -631,25 +638,32 @@ namespace supremacy::hacks {
 		if (current->m_flags & valve::e_ent_flags::fake_client)
 			current->m_sim_ticks = 1;
 		else if (previous) {
-			auto ticks_animated = current->m_sim_ticks;
-
 			const auto& prev_alive_loop_layer = previous->m_anim_layers.at(11u);
-			if (cur_alive_loop_layer.m_playback_rate == prev_alive_loop_layer.m_playback_rate)
-				ticks_animated = (cur_alive_loop_layer.m_cycle - prev_alive_loop_layer.m_cycle) / (cur_alive_loop_layer.m_playback_rate * valve::g_global_vars->m_interval_per_tick);
-			else
-				ticks_animated = ((((cur_alive_loop_layer.m_cycle / cur_alive_loop_layer.m_playback_rate) + ((1.f - prev_alive_loop_layer.m_cycle) / prev_alive_loop_layer.m_playback_rate)) / valve::g_global_vars->m_interval_per_tick));
 
-			current->m_sim_ticks = std::min(std::max(ticks_animated, current->m_sim_ticks), 17);
+			if (cur_alive_loop_layer.m_playback_rate == prev_alive_loop_layer.m_playback_rate) {
+				if (previous->m_weapon == current->m_weapon
+					&& cur_alive_loop_layer.m_playback_rate > 0.f
+					&& cur_alive_loop_layer.m_cycle > prev_alive_loop_layer.m_cycle) {
+					const auto v16 = current->m_sim_ticks + 1;
+					const auto v17 = valve::to_ticks(
+						(cur_alive_loop_layer.m_cycle - prev_alive_loop_layer.m_cycle)
+						/ cur_alive_loop_layer.m_playback_rate
+					);
+
+					if (v17 > v16
+						&& v17 <= 17)
+						current->m_sim_ticks = v17;
+				}
+			}
 		}
 
 		const auto sim_time_diff = valve::to_time(current->m_sim_ticks);
-
-		if (!current->m_weapon
-			|| current->m_last_shot_time != current->m_sim_time)
-			entry.m_last_reliable_angle = current->m_eye_angles;
-		else if (const auto wpn_data = current->m_weapon->wpn_data(); wpn_data
-			&& (static_cast<size_t>(wpn_data->m_unk_type - 2) <= 5 || current->m_weapon->item_index() == valve::e_item_index::taser))
-			current->m_shot = true;
+		if (current->m_weapon
+			&& current->m_last_shot_time > (current->m_sim_time - sim_time_diff)
+			&& current->m_sim_time >= current->m_last_shot_time)
+			if (const auto wpn_data = current->m_weapon->wpn_data(); wpn_data
+				&& (static_cast<size_t>(wpn_data->m_unk_type - 2) <= 5 || current->m_weapon->item_index() == valve::e_item_index::taser))
+				current->m_shot = true;
 
 		if (current->m_weapon)
 			if (const auto wpn_data = current->m_weapon->wpn_data(); wpn_data
@@ -657,8 +671,10 @@ namespace supremacy::hacks {
 				&& current->m_weapon->throw_time() != 0.f)
 				current->m_throw = true;
 
-		if (previous)
+		if (previous) {
 			current->m_velocity = (current->m_origin - previous->m_origin) / sim_time_diff;
+			current->m_processed_velocity = 1;
+		}
 
 		if ((current->m_flags & valve::e_ent_flags::on_ground)
 			&& (!previous || (previous->m_flags & valve::e_ent_flags::on_ground))) {
@@ -667,23 +683,24 @@ namespace supremacy::hacks {
 
 			if (previous
 				&& current->m_weapon == previous->m_weapon
-				&& cur_alive_loop_layer.m_cycle > previous->m_anim_layers.at(11u).m_cycle) {
+				&& cur_alive_loop_layer.m_weight > 0.f
+				&& cur_alive_loop_layer.m_weight < 1.f
+				&& cur_alive_loop_layer.m_weight != previous->m_anim_layers.at(11u).m_weight
+				&& cur_alive_loop_layer.m_cycle > previous->m_anim_layers.at(11u).m_cycle
+				&& cur_alive_loop_layer.m_playback_rate == previous->m_anim_layers.at(11u).m_playback_rate) {
 
-				const auto speed =
-					(0.55f - ((cur_alive_loop_layer.m_weight - 1.f) * 0.35f))
-					* (current->m_weapon ? std::max(0.1f, current->m_weapon->max_speed()) : 260.f);
+				auto anim_speed = 0.f;
+				float modifier = 0.35f * (1.f - cur_alive_loop_layer.m_weight);
+				if (modifier > 0.f
+					&& modifier < 1.f)
+					anim_speed = (current->m_weapon ? std::max(0.1f, current->m_weapon->max_speed()) : 260.f) * (modifier + 0.55f);
 
-				const auto average_speed = current->m_velocity.length_2d();
+				if (anim_speed > 0.f) {
+					anim_speed /= current->m_velocity.length_2d();
 
-				if ((cur_alive_loop_layer.m_weight >= 1.f && average_speed > speed)
-					|| (cur_alive_loop_layer.m_weight < 1.f && (speed >= average_speed || cur_alive_loop_layer.m_weight > 0.f))) {
-					if (average_speed) {
-						current->m_velocity.x /= average_speed;
-						current->m_velocity.y /= average_speed;
-					}
-
-					current->m_velocity.x *= speed;
-					current->m_velocity.y *= speed;
+					current->m_velocity.x *= anim_speed;
+					current->m_velocity.y *= anim_speed;
+					current->m_processed_velocity = 2;
 				}
 			}
 		}
@@ -697,7 +714,8 @@ namespace supremacy::hacks {
 
 		entry.m_player->set_abs_origin(current->m_origin);
 
-		if (!entry.m_player->friendly()) {
+		if (!entry.m_player->friendly()
+			&& !(current->m_flags & valve::e_ent_flags::fake_client)) {
 			for (int i{ 1 }; i < 5; i++) {
 				update(entry, current, previous, penultimate, i);
 
@@ -705,7 +723,6 @@ namespace supremacy::hacks {
 			}
 
 			bool fake{};
-
 			for (auto i = entry.m_lag_records.rbegin(); i != entry.m_lag_records.rend(); i = std::next(i)) {
 				const auto& lag_record = *i;
 				if (lag_record->m_sim_ticks > 1)
@@ -713,7 +730,7 @@ namespace supremacy::hacks {
 			}
 
 			if (fake
-				&& sdk::g_config_system->anti_aim_correction)
+				&& sdk::g_config_system->anti_aim_correction )
 				current->m_trying_to_resolve = true;
 		}
 

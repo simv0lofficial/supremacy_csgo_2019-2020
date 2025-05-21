@@ -1057,7 +1057,8 @@ namespace sdk {
 			std::stringstream ss;
 			ss << "deleted config '" << selected_cfg << "'\n";
 
-			util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("%s"), ss.str().c_str());
+			util::g_notify->print_logo();
+			util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("%s"), ss.str().c_str());
 		}
 		else
 		{
@@ -1066,7 +1067,8 @@ namespace sdk {
 			std::stringstream ss;
 			ss << "saved config '" << selected_cfg << "'\n";
 			
-			util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("%s"), ss.str().c_str());
+			util::g_notify->print_logo();
+			util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("%s"), ss.str().c_str());
 		}
 
 
@@ -1079,7 +1081,8 @@ namespace sdk {
 		confirm_opened = false;
 		confirmed = false;
 
-		delete_cfg ? util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("deleting cancelled\n")) : util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("saving cancelled\n"));
+		util::g_notify->print_logo();
+		delete_cfg ? util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("deleting cancelled\n")) : util::g_notify->print_notify(false, true, 0xffc0c0c0u, xorstr_("saving cancelled\n"));
 	}
 
 	void window()
@@ -1149,15 +1152,18 @@ namespace sdk {
 				ui::SetCursorPosX(4);
 				if (ui::Button("create", ImVec2(ui::GetWindowSize().x - 58 + 6, 0))) {
 
-					if (selected_cfg.empty()) 
-						util::g_notify->print_notify(false, true, 0xff0045ffu, xorstr_("failed to create config\n"));
+					if (selected_cfg.empty()) {
+						util::g_notify->print_logo();
+						util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("failed to create config\n"));
+					}
 					else
 					{
 						save(selected_cfg);
 
 						std::stringstream ss;
 						ss << "created & saved config '" << selected_cfg << "'\n";
-						util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("%s"), ss.str().c_str());
+						util::g_notify->print_logo();
+						util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("%s"), ss.str().c_str());
 					}
 
 					refresh();
@@ -1165,8 +1171,10 @@ namespace sdk {
 			}
 			ui::SetCursorPosX(4);
 			if (ui::Button("load", ImVec2(ui::GetWindowSize().x - 58 + 6, 0))) {
-				if (selected_cfg.empty())
-					util::g_notify->print_notify(false, true, 0xff0045ffu, xorstr_("failed to load config\n"));
+				if (selected_cfg.empty()) {
+					util::g_notify->print_logo();
+					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("failed to load config\n"));
+				}
 				else {
 					read(selected_cfg);
 					settings::m_menu_color[0] = g_config_system->menu_color[0];
@@ -1177,15 +1185,18 @@ namespace sdk {
 					std::stringstream ss;
 					ss << "loaded config '" << selected_cfg << "'\n";
 
-					util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("%s"), ss.str().c_str());
+					util::g_notify->print_logo();
+					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("%s"), ss.str().c_str());
 				}
 
 				refresh();
 			}
 			ui::SetCursorPosX(4);
 			if (ui::Button("save", ImVec2(ui::GetWindowSize().x - 58 + 6, 0))) {
-				if (selected_cfg.empty()) 
-					util::g_notify->print_notify(false, true, 0xff0045ffu, xorstr_("failed to save config\n"));
+				if (selected_cfg.empty()) {
+					util::g_notify->print_logo();
+					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("failed to save config\n"));
+				}
 				else				
 					confirm_save(false);
 				
@@ -1197,8 +1208,10 @@ namespace sdk {
 
 			ui::SetCursorPosX(4);
 			if (ui::Button("delete", ImVec2(ui::GetWindowSize().x - 58 + 6, 0))) {
-				if (selected_cfg.empty())
-					util::g_notify->print_notify(false, true, 0xff0045ffu, xorstr_("failed to remove config\n"));
+				if (selected_cfg.empty()) {
+					util::g_notify->print_logo();
+					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("failed to remove config\n"));
+				}
 				else				
 					confirm_save(true);
 				
@@ -1207,7 +1220,8 @@ namespace sdk {
 			ui::SetCursorPosX(4);
 			if (ui::Button("reset", ImVec2(ui::GetWindowSize().x - 58 + 6, 0))) {
 				reset();
-				util::g_notify->print_notify(false, true, 0xff3cc896u, xorstr_("successfully resetted menu state\n"));
+				util::g_notify->print_logo();
+				util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("successfully resetted menu state\n"));
 			}
 			ui::SetCursorPosX(4);
 			if (ui::Button("open folder", ImVec2(ui::GetWindowSize().x - 58 + 6, 0)))

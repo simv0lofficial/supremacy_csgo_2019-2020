@@ -83,10 +83,10 @@ namespace supremacy {
 								m_start_drawing{}, m_finish_drawing{}, m_add_clred_text{}, m_calc_text_size{},
 								m_set_font_glyph_set{}, m_has_c4{}, m_ret_insert_into_tree{}, m_smoke_count{},
 								m_disable_post_processing{}, m_crosshair_ret{}, m_ret_to_scope_clear{}, m_ret_to_scope_blurry{},
-								m_ret_to_eye_pos_and_vectors{}, m_allow_extrapolation{},
+								m_ret_to_fire_bullet{}, m_ret_set_first_person_viewangles{}, m_allow_extrapolation{},
 								m_item_system{}, m_hud{}, m_find_hud_element{}, m_clear_hud_wpn{},
 								m_clear_hud_wpn_icon{}, m_construct_voice_data_message{}, m_compute_hitbox_surround_box{}, m_lock_studio_hdr{},
-								m_setup_movement{}, m_get_sequence_linear_motion{}, m_invalidate_physics_recursive{};
+								m_setup_movement{}, m_get_sequence_linear_motion{}, m_invalidate_physics_recursive{}, m_thread_id_allocated{};
 
 			int*				m_pred_seed{};
 			valve::c_player*	m_pred_player{};
@@ -110,9 +110,10 @@ namespace supremacy {
 							*m_sv_enablebunnyhopping{}, *m_sv_jump_impulse{}, *m_sv_gravity{},
 							*m_weapon_recoil_scale{}, *m_weapon_accuracy_shotgun_spread_patterns{},
 							*m_molotov_throw_detonate_time{}, *m_weapon_molotov_maxdetonateslope{},
-							*m_cl_fullupdate{}, *m_mp_teammates_are_enemies{}, *m_sv_legacy_desync{},
-							*m_cl_lagcompensation{},
-							*m_name{}, *m_voice_loopback{}, *m_pitch{}, *m_yaw{}, *m_sensitivity{};
+							*m_cl_fullupdate{}, *m_mp_teammates_are_enemies{}, *m_cl_lagcompensation{},
+							*m_name{}, *m_voice_loopback{}, *m_pitch{}, *m_yaw{}, *m_sensitivity{},
+							*m_mp_damage_scale_t_head{}, *m_mp_damage_scale_t_body{}, *m_mp_damage_scale_ct_head{},
+							*m_mp_damage_scale_ct_body{};
 		}					m_cvars{};
 
 		struct net_info_t {

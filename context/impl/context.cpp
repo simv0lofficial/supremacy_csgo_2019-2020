@@ -1,5 +1,6 @@
 #include "../../supremacy.hpp"
 #include "../../dependencies/imgui/settings.hpp"
+#include "../../dependencies/threading/new_threads.h"
 
 uintptr_t __stdcall init_main(const HMODULE h_module) {
 	supremacy::g_context->init();
@@ -141,8 +142,10 @@ namespace supremacy {
 			find_byte_seq(GetModuleHandle(xorstr_("shaderapidx9.dll")), xorstr_("A1 ? ? ? ? 50 8B 08 FF 51 0C")) + 1u
 			);
 
+		thread_pool = new c_thread_pool;
 		const auto client_module = (TWENTYTWENTY ? GetModuleHandle(xorstr_("client.dll")) : GetModuleHandle(xorstr_("client_panorama.dll")));
 		const auto engine_module = GetModuleHandle(xorstr_("engine.dll"));
+		const auto tier0_module = GetModuleHandle(xorstr_("tier0.dll"));
 		const auto materialsystem_module = GetModuleHandle(xorstr_("materialsystem.dll"));
 		const auto vguimatsurface_module = GetModuleHandle(xorstr_("vguimatsurface.dll"));
 		const auto localize_module = GetModuleHandle(xorstr_("localize.dll"));
@@ -151,6 +154,7 @@ namespace supremacy {
 		const auto vstdlib_module = GetModuleHandle(xorstr_("vstdlib.dll"));
 		const auto client_code_section = code_section_t{ client_module };
 		const auto engine_code_section = code_section_t{ engine_module };
+		const auto tier0_code_section = code_section_t{ tier0_module };
 		const auto materialsystem_code_section = code_section_t{ materialsystem_module };
 		const auto vguimatsurface_code_section = code_section_t{ vguimatsurface_module };
 
@@ -376,7 +380,8 @@ namespace supremacy {
 			m_addresses.m_crosshair_ret = find_byte_seq(client_code_section, xorstr_("85 C0 0F 84 ? ? ? ? E8 ? ? ? ? 99"));
 			m_addresses.m_ret_to_scope_clear = find_byte_seq(client_code_section, xorstr_("0F 82 ? ? ? ? FF 50 3C")) + 0x9u;
 			m_addresses.m_ret_to_scope_blurry = find_byte_seq(client_code_section, xorstr_("FF B7 ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B 4C 24 24")) - 0x6u;
-			m_addresses.m_ret_to_eye_pos_and_vectors = find_byte_seq(client_code_section, xorstr_("8B 55 0C 8B C8 E8 ? ? ? ? 83 C4 08 5E 8B E5"));
+			m_addresses.m_ret_to_fire_bullet = find_byte_seq(client_code_section, xorstr_("8B 0D ? ? ? ? F3 0F 7E 00 8B 40 08 89 45 E4"));
+			m_addresses.m_ret_set_first_person_viewangles = find_byte_seq(client_code_section, xorstr_("8B 5D 0C 8B 08 89 0B 8B 48 04 89 4B 04 B9"));
 			m_addresses.m_allow_extrapolation = find_byte_seq(client_code_section, xorstr_("A2 ? ? ? ? 8B 45 E8"));
 			m_addresses.m_item_system = find_byte_seq(client_code_section, xorstr_("A1 ? ? ? ? 85 C0 75 ? A1 ? ? ? ? 56 68 E8 07 00 00"));
 			m_addresses.m_hud = *reinterpret_cast<std::uintptr_t*>(
@@ -391,6 +396,7 @@ namespace supremacy {
 			m_addresses.m_setup_movement = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1"));
 			m_addresses.m_get_sequence_linear_motion = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14"));
 			m_addresses.m_invalidate_physics_recursive = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3"));
+			m_addresses.m_thread_id_allocated = find_byte_seq(tier0_code_section, xorstr_("C6 86 ? ? ? ? ? 83 05 ? ? ? ? ? 5E 75 04 33 C0 87 07")) + 0x2u;
 		}
 
 		of_log << "initializing cvars...\n"; {
@@ -427,6 +433,10 @@ namespace supremacy {
 			m_cvars.m_pitch = valve::g_cvar->find_var(xorstr_("m_pitch"));
 			m_cvars.m_yaw = valve::g_cvar->find_var(xorstr_("m_yaw"));
 			m_cvars.m_sensitivity = valve::g_cvar->find_var(xorstr_("sensitivity"));
+			m_cvars.m_mp_damage_scale_t_head = valve::g_cvar->find_var(xorstr_("mp_damage_scale_t_head"));
+			m_cvars.m_mp_damage_scale_t_body = valve::g_cvar->find_var(xorstr_("mp_damage_scale_t_body"));
+			m_cvars.m_mp_damage_scale_ct_head = valve::g_cvar->find_var(xorstr_("mp_damage_scale_ct_head"));
+			m_cvars.m_mp_damage_scale_ct_body = valve::g_cvar->find_var(xorstr_("mp_damage_scale_ct_body"));
 		}
 
 		of_log << "a few useless corrections...\n";
@@ -570,7 +580,7 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_accumulate_layers)
 			) != MH_OK)
 				return;
-
+#if 0
 			if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F0 B8 F8 10"))
@@ -579,7 +589,7 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_standard_blending_rules)
 			) != MH_OK)
 				return;
-
+#endif
 			if (MH_CreateHook(
 				(*reinterpret_cast<LPVOID**>((valve::client_state_t*)(uint32_t(valve::g_client_state) + 0x8)))[5u],
 				reinterpret_cast<LPVOID>(&hooks::packet_start),
@@ -593,7 +603,14 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_packet_end)
 			) != MH_OK)
 				return;
-
+#if 0
+			if (MH_CreateHook(
+				(*reinterpret_cast<LPVOID**>(valve::g_prediction))[19u],
+				reinterpret_cast<LPVOID>(&hooks::run_command),
+				reinterpret_cast<LPVOID*>(&hooks::orig_run_command)
+			) != MH_OK)
+				return;
+#endif
 			if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(
@@ -847,12 +864,14 @@ namespace supremacy {
 				return;
 		}
 
+		of_log << "initializing multi-threading...\n";
+		auto tier0 = GetModuleHandle(xorstr_("tier0.dll"));
+		if (tier0)		
+			thread_pool->init();		
+
 		of_log << "done!\n";
 		of_log.close();
 
-		// note: simv0l - nonono, not now)
-		//valve::g_cvar->find_var(xorstr_("fps_max"))->set_int(0);
-		//valve::g_cvar->find_var(xorstr_("fps_max_menu"))->set_int(0);
 		valve::g_cvar->find_var(xorstr_("developer"))->set_int(1);
 		valve::g_cvar->find_var(xorstr_("con_enable"))->set_int(2);
 		valve::g_cvar->find_var(xorstr_("con_filter_enable"))->set_int(1);

@@ -122,12 +122,16 @@ namespace supremacy::hacks {
 					bones[bone_index][2u][3u] + 1.7f
 				};
 
-				if (eye_pos.z > head_pos.z) {
-					const auto v5 = std::abs(eye_pos.z - head_pos.z);
-					const auto v6 = std::max((v5 - 4.f) / 6.f, 0.f);
-					const auto v7 = std::min(v6, 1.f);
+				if (head_pos.z < eye_pos.z) {
+					constexpr auto firstperson_to_thirdperson_vertical_tolerance_min = 4.f;
+					constexpr auto firstperson_to_thirdperson_vertical_tolerance_max = 10.f;
 
-					eye_pos.z += (((v7 * v7) * 3.f) - ((v7 + v7) * (v7 * v7))) * (head_pos.z - eye_pos.z);
+					auto lerp = math::simple_spline_remap_val_clamped(abs(eye_pos.z - head_pos.z),
+						firstperson_to_thirdperson_vertical_tolerance_min,
+						firstperson_to_thirdperson_vertical_tolerance_max,
+						0.f, 1.f);
+
+					eye_pos.z = math::lerp(lerp, eye_pos.z, head_pos.z);
 				}
 			}
 		}

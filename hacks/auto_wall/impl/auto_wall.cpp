@@ -1,12 +1,10 @@
 #include "../../../supremacy.hpp"
 
-namespace supremacy::hacks
-{
+namespace supremacy::hacks {
 	bool c_auto_wall::trace_to_exit(
 		const vec3_t& src, const vec3_t& dir,
 		const valve::trace_t& enter_trace, valve::trace_t& exit_trace
-	) const
-	{
+	) const {
 		float dist{};
 		valve::e_mask first_contents{};
 
@@ -78,8 +76,7 @@ namespace supremacy::hacks
 	void c_auto_wall::clip_trace_to_player(
 		const vec3_t& src, const vec3_t& dst, valve::trace_t& trace,
 		valve::c_player* const player, const valve::should_hit_fn_t& should_hit_fn
-	) const
-	{
+	) const {
 		if (should_hit_fn
 			&& !should_hit_fn(player, valve::e_mask::shot_player))
 			return;
@@ -113,8 +110,7 @@ namespace supremacy::hacks
 		valve::c_player* const shooter, const valve::weapon_data_t* const wpn_data,
 		const valve::trace_t& enter_trace, vec3_t& src, const vec3_t& dir, int& pen_count,
 		float& cur_dmg, const float pen_modifier
-	) const
-	{
+	) const {
 		if (pen_count <= 0
 			|| wpn_data->m_penetration <= 0.f)
 			return false;
@@ -138,6 +134,7 @@ namespace supremacy::hacks
 		}
 		else if (enter_trace.m_contents & valve::e_mask::contents_grate
 			|| enter_trace.m_surface.m_flags & valve::e_mask::surf_nodraw) {
+			final_dmg_modifier = 0.16f;
 			combined_pen_modifier = 1.f;
 		}
 		else if (enter_trace.m_hit_entity
@@ -149,12 +146,15 @@ namespace supremacy::hacks
 				return false;
 
 			combined_pen_modifier = dmg_bullet_pen;
+			final_dmg_modifier = 0.16f;
 		}
 		else {
 			combined_pen_modifier = (
 				enter_surface_data->m_game.m_penetration_modifier
 				+ exit_surface_data->m_game.m_penetration_modifier
 				) * 0.5f;
+
+			final_dmg_modifier = 0.16f;
 		}
 
 		if (enter_surface_data->m_game.m_material == exit_surface_data->m_game.m_material) {
@@ -192,74 +192,52 @@ namespace supremacy::hacks
 	void c_auto_wall::scale_dmg(
 		valve::c_player* const player, float& dmg,
 		const float armor_ratio, const int hitgroup
-	) const
-	{
-		bool  has_heavy_armor;
-		int   armor;
-		float heavy_ratio, bonus_ratio, ratio, new_damage;
-
-		static auto is_armored = [](valve::c_player* const player, int armor, int hitgroup) {
-			if (armor <= 0)
-				return false;
-
-			if (hitgroup == 1 && player->has_helmet())
-				return true;
-
-			else if (hitgroup >= 2 && hitgroup <= 4)
-				return true;
-
-			return false;
-		};
-
-		has_heavy_armor = player->has_heavy_armor();
+	) const {
+		const auto has_heavy_armor = player->has_heavy_armor();
 
 		switch (hitgroup) {
 		case 1:
 			dmg *= 4.f;
-			break;
 
-		case 3:
-			dmg *= 1.25f;
-			break;
+			if (has_heavy_armor)
+				dmg *= 0.5f;
 
+			break;
+		case 3: dmg *= 1.25f; break;
 		case 6:
 		case 7:
 			dmg *= 0.75f;
-			break;
 
-		default:
 			break;
 		}
 
-		armor = player->armor_value();
+		const auto armor_value = player->armor_value();
+		if (!armor_value
+			|| hitgroup < 0
+			|| hitgroup > 5
+			|| (hitgroup == 1 && !player->has_helmet()))
+			return;
 
-		if (is_armored(player, armor, hitgroup)) {
-			heavy_ratio = 1.f;
-			bonus_ratio = 0.5f;
-			ratio = armor_ratio * 0.5f;
+		auto heavy_ratio = 1.f, bonus_ratio = 0.5f, ratio = armor_ratio * 0.5f;
 
-			if (has_heavy_armor) {
-				bonus_ratio = 0.33f;
-				ratio = armor_ratio * 0.25f;
-				heavy_ratio = 0.33f;
-
-				new_damage = (dmg * ratio) * 0.85f;
-			}
-			else
-				new_damage = dmg * ratio;
-
-			if (((dmg - new_damage) * (heavy_ratio * bonus_ratio)) > armor)
-				new_damage = dmg - (armor / bonus_ratio);
-
-			dmg = new_damage;
+		if (has_heavy_armor) {
+			ratio *= 0.2f;
+			heavy_ratio = 0.25f;
+			bonus_ratio = 0.33f;
 		}
+
+		auto dmg_to_hp = dmg * ratio;
+
+		if (((dmg - dmg_to_hp) * (bonus_ratio * heavy_ratio)) > armor_value)
+			dmg -= armor_value / bonus_ratio;
+		else
+			dmg = dmg_to_hp;
 	}
 
 	pen_data_t c_auto_wall::fire_bullet(
 		valve::c_player* const shooter, valve::c_player* const target,
 		const valve::weapon_data_t* const wpn_data, const bool is_taser, vec3_t src, const vec3_t& dst
-	) const
-	{
+	) const {
 		const auto pen_modifier = std::max((3.f / wpn_data->m_penetration) * 1.25f, 0.f);
 
 		float cur_dist{};
@@ -277,8 +255,7 @@ namespace supremacy::hacks
 		valve::trace_t trace{};
 		valve::trace_filter_skip_two_entities_t trace_filter{};
 
-		trace_filter.m_ignore_entity0 = shooter;
-		trace_filter.m_ignore_entity1 = nullptr;
+		valve::c_player* last_hit_player{};
 
 		auto max_dist = wpn_data->m_range;
 
@@ -286,6 +263,9 @@ namespace supremacy::hacks
 			max_dist -= cur_dist;
 
 			const auto cur_dst = src + dir * max_dist;
+
+			trace_filter.m_ignore_entity0 = shooter;
+			trace_filter.m_ignore_entity1 = last_hit_player;
 
 			valve::g_engine_trace->trace_ray(
 				{ src, cur_dst }, valve::e_mask::shot_player,
@@ -318,7 +298,12 @@ namespace supremacy::hacks
 
 					return data;
 				}
+
+				last_hit_player =
+					is_player ? static_cast<valve::c_player*>(trace.m_hit_entity) : nullptr;
 			}
+			else
+				last_hit_player = nullptr;
 
 			if (is_taser
 				|| (cur_dist > 3000.f && wpn_data->m_penetration > 0.f))
@@ -328,8 +313,6 @@ namespace supremacy::hacks
 			if (enter_surface->m_game.m_penetration_modifier < 0.1f
 				|| !handle_bullet_penetration(shooter, wpn_data, trace, src, dir, data.m_remaining_pen, cur_dmg, pen_modifier))
 				break;
-
-			data.did_penetrate = true;
 		}
 
 		return data;
@@ -337,78 +320,87 @@ namespace supremacy::hacks
 
 	pen_data_t c_auto_wall::fire_emulated(
 		valve::c_player* const shooter, valve::c_player* const target, vec3_t src, const vec3_t& dst
-	) const
-	{
+	) const {
 		static const auto wpn_data = []() {
-				valve::weapon_data_t wpn_data{};
+			valve::weapon_data_t wpn_data{};
 
-				wpn_data.m_dmg = 200;
-				wpn_data.m_range = 8192.f;
-				wpn_data.m_penetration = 6.f;
-				wpn_data.m_range_modifier = 1.f;
-				wpn_data.m_armor_ratio = 2.f;
+			wpn_data.m_dmg = 115;
+			wpn_data.m_range = 8192.f;
+			wpn_data.m_penetration = 2.5f;
+			wpn_data.m_range_modifier = 0.99f;
+			wpn_data.m_armor_ratio = 1.95f;
 
-				return wpn_data;
-			}();
+			return wpn_data;
+		}();
 
-			const auto pen_modifier = std::max((3.f / wpn_data.m_penetration) * 1.25f, 0.f);
+		const auto pen_modifier = std::max((3.f / wpn_data.m_penetration) * 1.25f, 0.f);
 
-			float cur_dist{};
+		float cur_dist{};
 
-			pen_data_t data{};
+		pen_data_t data{};
 
-			data.m_remaining_pen = 4;
+		data.m_remaining_pen = 4;
 
-			auto cur_dmg = static_cast<float>(wpn_data.m_dmg);
+		auto cur_dmg = static_cast<float>(wpn_data.m_dmg);
 
-			auto dir = dst - src;
+		auto dir = dst - src;
 
-			const auto max_dist = dir.normalize();
+		const auto max_dist = dir.normalize();
 
-			valve::trace_t trace{};
-			valve::trace_filter_skip_two_entities_t trace_filter{};
+		valve::trace_t trace{};
+		valve::trace_filter_skip_two_entities_t trace_filter{};
+		valve::c_player* last_hit_player{};
+
+		while (cur_dmg > 0.f) {
+			const auto dist_remaining = wpn_data.m_range - cur_dist;
+
+			const auto cur_dst = src + dir * dist_remaining;
+
 			trace_filter.m_ignore_entity0 = shooter;
-			trace_filter.m_ignore_entity1 = nullptr;
+			trace_filter.m_ignore_entity1 = last_hit_player;
 
-			while (cur_dmg > 0.f) {
-				const auto dist_remaining = wpn_data.m_range - cur_dist;
+			valve::g_engine_trace->trace_ray(
+				{ src, cur_dst }, valve::e_mask::shot_player,
+				reinterpret_cast<valve::trace_filter_t*>(&trace_filter), &trace
+			);
 
-				const auto cur_dst = src + dir * dist_remaining;
+			if (target)
+				clip_trace_to_player(src, cur_dst + dir * 40.f, trace, target, trace_filter.m_should_hit_fn);
 
-				valve::g_engine_trace->trace_ray(
-					{ src, cur_dst }, valve::e_mask::shot_player,
-					reinterpret_cast<valve::trace_filter_t*>(&trace_filter), &trace
-				);
+			if (trace.m_fraction == 1.f
+				|| (trace.m_end_pos - src).length() > max_dist)
+				break;
 
-				if (target)
-					clip_trace_to_player(src, cur_dst + dir * 40.f, trace, target, trace_filter.m_should_hit_fn);
+			cur_dist += trace.m_fraction * dist_remaining;
+			cur_dmg *= std::pow(wpn_data.m_range_modifier, cur_dist / 500.f);
 
-				if (trace.m_fraction == 1.f
-					|| (trace.m_end_pos - src).length() > max_dist)
-					break;
-
-				cur_dist += trace.m_fraction * dist_remaining;
-				cur_dmg *= std::pow(wpn_data.m_range_modifier, cur_dist / 500.f);
-
-				if (trace.m_hit_entity
-					&& trace.m_hit_entity == target) {
+			if (trace.m_hit_entity) {
+				const auto is_player = trace.m_hit_entity->is_player();
+				if (trace.m_hit_entity == target) {
 					data.m_hit_player = static_cast<valve::c_player*>(trace.m_hit_entity);
 					data.m_hitbox = trace.m_hitbox;
 					data.m_hitgroup = trace.m_hitgroup;
 					data.m_dmg = static_cast<int>(cur_dmg);
+
 					return data;
 				}
 
-				if (cur_dist > 3000.f
-					&& wpn_data.m_penetration > 0.f)
-					break;
-
-				const auto enter_surface = valve::g_surface_data->find(trace.m_surface.m_surface_props);
-				if (enter_surface->m_game.m_penetration_modifier < 0.1f
-					|| !handle_bullet_penetration(shooter, &wpn_data, trace, src, dir, data.m_remaining_pen, cur_dmg, pen_modifier))
-					break;
+				last_hit_player =
+					is_player ? static_cast<valve::c_player*>(trace.m_hit_entity) : nullptr;
 			}
+			else
+				last_hit_player = nullptr;
 
-			return data;
+			if (cur_dist > 3000.f
+				&& wpn_data.m_penetration > 0.f)
+				break;
+
+			const auto enter_surface = valve::g_surface_data->find(trace.m_surface.m_surface_props);
+			if (enter_surface->m_game.m_penetration_modifier < 0.1f
+				|| !handle_bullet_penetration(shooter, &wpn_data, trace, src, dir, data.m_remaining_pen, cur_dmg, pen_modifier))
+				break;
+		}
+
+		return data;
 	}
 }

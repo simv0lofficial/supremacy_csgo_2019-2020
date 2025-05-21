@@ -57,13 +57,13 @@ namespace supremacy::hacks {
 
 		bool							m_dormant{}, m_trying_to_resolve{}, m_broke_lc{},
 			m_shot{}, m_throw{}, m_walking{}, m_extending{}, m_sideways{}, m_forward{},
-			m_extrapolated{}, m_shifting{}, m_first_after_dormant{};
+			m_extrapolated{}, m_shifting{}, m_first_after_dormant{}, m_can_solve_move{};
 
 		valve::e_ent_flags				m_flags{};
 		valve::c_weapon* m_weapon{};
 
 		int								m_sim_ticks{}, m_side{}, m_priority{}, m_type{},
-			m_receive_tick{}, m_extrapolate_ticks{};
+			m_receive_tick{}, m_extrapolate_ticks{}, m_processed_velocity{};
 		float							m_sim_time{}, m_old_sim_time{}, m_lby{}, m_duck_amount{},
 			m_last_shot_time{}, m_server_rate{}, m_negative_rate{}, m_positive_rate{}, m_zero_rate{}, m_low_negative_rate{}, m_low_positive_rate{};
 
@@ -82,9 +82,7 @@ namespace supremacy::hacks {
 
 		valve::c_player* m_player{};
 
-		float											m_spawn_time{}, m_highest_simtime{}, m_receive_time{}, m_alive_loop_cycle{};
-
-		qangle_t m_last_reliable_angle{};
+		float											m_spawn_time{}, m_alive_loop_cycle{}, m_receive_time{}, m_highest_simtime{};
 		vec3_t											m_render_origin{};
 
 		valve::bones_t									m_bones{};

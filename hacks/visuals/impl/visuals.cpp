@@ -1513,6 +1513,14 @@ namespace supremacy::hacks {
 				2
 			);
 
+			//const auto lifetime = ((((float)((uintptr_t)entity + 0x20)) + 7.03125f) - valve::g_global_vars->m_cur_time) / 7.01325f;
+			//add_rect_filled(vec2_t(screen_pos.x - 7, screen_pos.y + 5), vec2_t(30 * lifetime, 4),
+			//	0xff0000ffu //|
+			//	//static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[0] * 255.f)
+			//	//| (static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[1] * 255.f) << 8u)
+			//	//| (static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[2] * 255.f) << 16u)
+			//);
+			//add_rect(vec2_t(screen_pos.x - 7, screen_pos.y + 5), vec2_t(30, 4), ImColor(0, 0, 0, 255));
 			break;
 		case valve::e_class_id::smoke_grenade_projectile:
 			add_text(
@@ -1524,6 +1532,16 @@ namespace supremacy::hacks {
 				2
 			);
 
+			//const auto lifetime = ((((float)((uintptr_t)entity + 0x20)) + 18.f) - valve::g_global_vars->m_cur_time) / 18.f;
+
+			//add_rect_filled(vec2_t(screen_pos.x - 10, screen_pos.y + 5), vec2_t(46 * lifetime, 4),
+			//	0xff0000ffu /*|
+			//	static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[0] * 255.f)
+			//	| (static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[1] * 255.f) << 8u)
+			//	| (static_cast<std::uint8_t>(m_cfg->m_other.m_grenades_clr[2] * 255.f) << 16u)*/
+			//);
+			//add_rect(vec2_t(screen_pos.x - 10, screen_pos.y + 5), vec2_t(46, 4), ImColor(0, 0, 0, 255));
+		
 			break;
 		}
 	}

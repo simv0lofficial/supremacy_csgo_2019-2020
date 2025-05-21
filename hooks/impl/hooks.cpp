@@ -494,22 +494,9 @@ namespace supremacy::hooks
 
 		auto& net_info = g_context->net_info();
 
-		const auto update_rate = std::clamp(
-			g_context->cvars().m_cl_updaterate->get_float(),
-			g_context->cvars().m_sv_minupdaterate->get_float(),
-			g_context->cvars().m_sv_maxupdaterate->get_float()
-		);
-
-		const auto lerp_ratio = std::clamp(
-			g_context->cvars().m_cl_interp_ratio->get_float(),
-			g_context->cvars().m_sv_client_min_interp_ratio->get_float(),
-			g_context->cvars().m_sv_client_max_interp_ratio->get_float()
-		);
-
-		net_info.m_lerp = std::clamp(
-			lerp_ratio / update_rate,
+		net_info.m_lerp = std::max(
 			g_context->cvars().m_cl_interp->get_float(),
-			1.f
+			g_context->cvars().m_cl_interp_ratio->get_float() / g_context->cvars().m_cl_updaterate->get_float()
 		);
 
 		net_info.m_latency = { net_channel_info->latency(1), net_channel_info->latency(0) };
@@ -535,7 +522,7 @@ namespace supremacy::hooks
 		else
 			g_context->wpn_data() = nullptr;
 
-		// todo: simv0l - move this shit somewhere.
+		// todo: simv0l - make this shit NOT LIKE THIS)0))
 		if (g_context->wpn_data()) {
 			if (g_context->weapon()->item_index() == valve::e_item_index::elite
 				|| g_context->weapon()->item_index() == valve::e_item_index::fiveseven
@@ -1370,11 +1357,9 @@ namespace supremacy::hooks
 		if (!send_packet) {
 			auto& net_channel = valve::g_client_state->m_net_channel;
 			const auto backup_choked_packets = net_channel->m_choked_packets;
-
 			net_channel->m_choked_packets = 0;
 			net_channel->send_datagram(0);
 			--net_channel->m_out_seq_number;
-
 			net_channel->m_choked_packets = backup_choked_packets;
 		}
 		else {
@@ -1388,7 +1373,6 @@ namespace supremacy::hooks
 
 			if (valve::g_client_state->m_last_cmd_out == hacks::g_exploits->recharge_cmd()) {
 				auto& local_data = hacks::g_eng_pred->local_data().at(user_cmd.m_number % 150);
-
 				local_data.m_override_tick_base = true;
 				local_data.m_adjusted_tick_base = hacks::g_exploits->adjust_tick_base(
 					valve::g_client_state->m_choked_cmds + 1, 1, -valve::g_client_state->m_choked_cmds
@@ -1397,8 +1381,6 @@ namespace supremacy::hooks
 		}
 
 		g_context->last_cmd_number() = user_cmd.m_number;
-
-		hacks::g_exploits->charged() = false;
 
 		if (g_context->flags() & e_context_flags::aim_fire
 			|| user_cmd.m_buttons & valve::e_buttons::in_attack)
@@ -1445,8 +1427,7 @@ namespace supremacy::hooks
 
 				if (player->sim_time() == player->old_sim_time()
 					|| (entry.m_unk = false, correction_ticks == -1)
-					|| std::abs(valve::to_ticks(player->sim_time()) - valve::g_client_state->m_server_tick) <= (correction_ticks + 1))
-				{
+					|| std::abs(valve::to_ticks(player->sim_time()) - valve::g_client_state->m_server_tick) <= (correction_ticks + 1)) {
 					if (!entry.m_unk)
 						continue;
 				}
@@ -1482,12 +1463,10 @@ namespace supremacy::hooks
 			const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
 			if (correction_ticks == -1)
 				hacks::g_exploits->correction_amount() = 0;
-			else {
-				if (valve::g_local_player->sim_time() > valve::g_local_player->old_sim_time()) {
-					const auto delta = valve::to_ticks(valve::g_local_player->sim_time()) - valve::g_client_state->m_server_tick;
-					if (std::abs(delta) <= correction_ticks)
-						hacks::g_exploits->correction_amount() = delta;
-				}
+			else if (valve::g_local_player->sim_time() > valve::g_local_player->old_sim_time()) {
+				const auto delta = valve::to_ticks(valve::g_local_player->sim_time()) - valve::g_client_state->m_server_tick;
+				if (std::abs(delta) <= correction_ticks)
+					hacks::g_exploits->correction_amount() = delta;
 			}
 
 			valve::g_engine->fire_events();
@@ -1691,6 +1670,10 @@ namespace supremacy::hooks
 	void __fastcall packet_start(
 		const std::uintptr_t ecx, const std::uintptr_t edx, const int in_seq, const int out_acked
 	) {
+		if (!valve::g_local_player
+			|| !valve::g_local_player->alive())
+			return orig_packet_start(ecx, edx, in_seq, out_acked);
+
 		auto& sented_cmds = g_context->sented_cmds();
 		if (sented_cmds.empty()
 			|| std::find(sented_cmds.rbegin(), sented_cmds.rend(), out_acked) == sented_cmds.rend())
@@ -1710,7 +1693,11 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall packet_end(const std::uintptr_t ecx, const std::uintptr_t edx) {
-		const auto& local_data = hacks::g_eng_pred->local_data().at(valve::g_client_state->m_cmd_ack % 150);
+		if (!valve::g_local_player
+			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
+			return orig_packet_end(ecx, edx);
+
+		const auto& local_data = hacks::g_eng_pred->local_data( ).at( valve::g_client_state->m_last_cmd_ack % 150 );
 		if (local_data.m_spawn_time == valve::g_local_player->spawn_time()
 			&& local_data.m_shift_amount > 0
 			&& local_data.m_tick_base > valve::g_local_player->tick_base()
@@ -1718,6 +1705,15 @@ namespace supremacy::hooks
 			valve::g_local_player->tick_base() = local_data.m_tick_base + 1;
 
 		orig_packet_end(ecx, edx);
+	}
+
+	void __fastcall run_command(const std::uintptr_t ecx, const std::uintptr_t edx, valve::c_player* const player, valve::user_cmd_t* user_cmd, valve::c_move_helper* move_helper) {
+		if (!player
+			|| !valve::g_local_player
+			|| player != valve::g_local_player)
+			return orig_run_command(ecx, edx, player, user_cmd, move_helper);		
+
+		orig_run_command(ecx, edx, player, user_cmd, move_helper);
 	}
 
 	void __fastcall physics_simulate(valve::c_player* const ecx, const std::uintptr_t edx) {
@@ -1733,13 +1729,12 @@ namespace supremacy::hooks
 			return hacks::g_eng_pred->net_vars().at(user_cmd.m_number % 150).store(user_cmd.m_number);
 		}
 
-		if (user_cmd.m_number == (valve::g_client_state->m_cmd_ack + 1))
-			ecx->velocity_modifier() = hacks::g_eng_pred->net_velocity_modifier();
+		if (user_cmd.m_number == (valve::g_client_state->m_last_cmd_ack + valve::g_client_state->m_choked_cmds + 1))
+			ecx->velocity_modifier( ) = hacks::g_eng_pred->net_velocity_modifier( );
 
 		hacks::g_eng_pred->net_vars().at((user_cmd.m_number - 1) % 150).restore(user_cmd.m_number - 1);
 
 		const auto backup_tick_base = ecx->tick_base();
-
 		const auto& local_data = hacks::g_eng_pred->local_data().at(user_cmd.m_number % 150);
 		if (local_data.m_spawn_time == ecx->spawn_time() && local_data.m_override_tick_base)
 			ecx->tick_base() = local_data.m_adjusted_tick_base;
@@ -1773,7 +1768,7 @@ namespace supremacy::hooks
 
 		const auto backup_sim_time = ecx->sim_time();
 
-		const auto& local_data = hacks::g_eng_pred->local_data().at(valve::g_client_state->m_cmd_ack % 150);
+		const auto& local_data = hacks::g_eng_pred->local_data( ).at( valve::g_client_state->m_last_cmd_ack % 150 );
 		if (local_data.m_spawn_time == valve::g_local_player->spawn_time()
 			&& local_data.m_shift_amount > 0)
 			ecx->sim_time() += valve::to_time(local_data.m_shift_amount);
@@ -1825,8 +1820,8 @@ namespace supremacy::hooks
 
 						from = to;
 					}
-				}
-				else 
+				}							
+				else
 					hacks::g_exploits->handle_other_shift(ecx, edx, slot, buffer, from, to, move_msg);
 			}
 
@@ -1895,7 +1890,7 @@ namespace supremacy::hooks
 		hacks::g_shots->elements().clear();
 
 		hacks::g_visuals->next_update() = valve::g_global_vars->m_real_time + 10.f;
-
+				
 		hacks::g_exploits->recharge_cmd() = 0;
 		hacks::g_exploits->ticks_allowed() = 0;
 		hacks::g_exploits->cur_shift_amount() = 0;
@@ -2125,7 +2120,8 @@ namespace supremacy::hooks
 
 	qangle_t* __fastcall get_eye_angles(valve::c_player* const ecx, const std::uintptr_t edx) {
 		if (ecx != valve::g_local_player
-			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) != g_context->addresses().m_ret_to_eye_pos_and_vectors)
+			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_fire_bullet
+			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_set_first_person_viewangles)
 			return orig_get_eye_angles(ecx, edx);
 
 		return &hacks::g_eng_pred->local_data().at(g_context->last_sent_cmd_number() % 150).m_user_cmd.m_view_angles;

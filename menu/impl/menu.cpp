@@ -2,8 +2,7 @@
 #include "../../dependencies/imgui/settings.hpp"
 
 namespace supremacy {
-	void c_menu::init(IDirect3DDevice9* const pDevice)
-	{
+	void c_menu::init(IDirect3DDevice9* const pDevice) {
 		if (this->m_initialized)
 			return;
 
@@ -48,7 +47,7 @@ namespace supremacy {
 		};
 
 		ImFontConfig cfg;
-		cfg.RasterizerFlags = 1 << 7 | 1 << 4; // semi-disable antialiasing
+		cfg.RasterizerFlags = 1 << 7 | 1 << 4;
 		cfg.GlyphRanges = ranges;
 
 		io.Fonts->AddFontFromMemoryTTF(main_font, 291576, 12.f, &cfg, get_font_glyph_ranges(io.Fonts));
@@ -61,15 +60,11 @@ namespace supremacy {
 		this->m_initialized = true;
 	}
 
-	void c_menu::draw_begin(IDirect3DDevice9* const device)
-	{
-		static bool once{ false };
-		if (!once)
-		{
-			this->init(device);
-
-			once = true;
-		}
+	void c_menu::draw_begin(IDirect3DDevice9* const device)	{
+		static std::once_flag fl;
+		std::call_once(fl, [device]() {
+			g_menu->init(device);
+		});
 
 		if (!this->m_initialized)
 			return;
@@ -79,8 +74,7 @@ namespace supremacy {
 		ui::NewFrame();
 	}
 
-	void c_menu::draw()
-	{
+	void c_menu::draw()	{
 		this->handle();
 
 		if (!m_is_opened || ui::GetStyle().Alpha == 0.f)
@@ -97,27 +91,17 @@ namespace supremacy {
 		ui::TabButton("config", &this->m_current_tab, 4, 6);
 		ui::TabButton("skins", &this->m_current_tab, 5, 6);
 
-		auto child_size = ImVec2(ui::GetWindowSize().x / 3 - 31 + 65 + 18, ui::GetWindowSize().y - 80 - 27);
-		auto child_size_d = ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y - 80 - 27);
-		auto child_size_xd = ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27);
-
-		static auto posCalc = [](int num) -> ImVec2
-		{
-			return ImVec2(ui::GetWindowPos().x + 26 + (ui::GetWindowSize().x / 3 - 31) * num + 20 * num, ui::GetWindowPos().y + 52 + 27);
-		};
-
-		static auto posDouble = [](int num) -> ImVec2
-		{
+		const auto child_size = ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y - 80 - 27);
+		static auto calc_pos = [](int num) -> ImVec2 {
 			if (num == 1)
 				return ImVec2(ui::GetWindowPos().x - 4 + 26 + (ui::GetWindowSize().x / 2 - 36) * num + 20 * num, ui::GetWindowPos().y + 52 + 27);
 			else
 				return ImVec2(ui::GetWindowPos().x + 26 + (ui::GetWindowSize().x / 2 - 36) * num + 20 * num, ui::GetWindowPos().y + 52 + 27);
 		};
 
-		if (this->m_current_tab == 0)
-		{
-			ui::SetNextWindowPos(posDouble(0));
-			ui::BeginChild("aimbot", child_size_d);
+		if (this->m_current_tab == 0) {
+			ui::SetNextWindowPos(calc_pos(0));
+			ui::BeginChild("aimbot", child_size);
 			{
 				ui::Checkbox("enabled", &sdk::g_config_system->enabled);
 				ui::Keybind("##enabled_key", &sdk::g_config_system->enabled_key, &sdk::g_config_system->enabled_key_style);
@@ -430,8 +414,8 @@ namespace supremacy {
 			}
 			ui::EndChild();
 
-			ui::SetNextWindowPos(posDouble(1));
-			ui::BeginChild("other", child_size_d);
+			ui::SetNextWindowPos(calc_pos(1));
+			ui::BeginChild("other", child_size);
 			{
 				if (sdk::g_config_system->weapon_selection == 0) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->pistols_remove_recoil);
@@ -887,10 +871,9 @@ namespace supremacy {
 			ui::EndChild();
 		}
 
-		if (this->m_current_tab == 1)
-		{
-			ui::SetNextWindowPos(posDouble(0));
-			ui::BeginChild("anti-aimbot angles", child_size_d);
+		if (this->m_current_tab == 1) {
+			ui::SetNextWindowPos(calc_pos(0));
+			ui::BeginChild("anti-aimbot angles", child_size);
 			{
 				ui::Checkbox("enabled", &sdk::g_config_system->enabled2);
 				ui::SliderInt("pitch", &sdk::g_config_system->pitch, -89, 89, "%d°%");
@@ -905,7 +888,7 @@ namespace supremacy {
 				ui::SingleSelect("body yaw", &sdk::g_config_system->body_yaw, { "off", "static", "jitter" });
 				ui::Keybind("##body_yaw_key", &sdk::g_config_system->body_yaw_key, &sdk::g_config_system->body_yaw_key_style);
 				if (sdk::g_config_system->body_yaw) {
-					ui::SliderInt("yaw limit", &sdk::g_config_system->yaw_limit, 0, 60, "%d°%");
+					ui::SliderInt("yaw limit", &sdk::g_config_system->yaw_limit, 0, 58, "%d°%");
 					ui::SliderInt("body lean", &sdk::g_config_system->body_lean, -180, 180, "%d°%");
 					ui::SliderInt("inverted body lean", &sdk::g_config_system->inverted_body_lean, -180, 180, "%d°%");
 					ui::SingleSelect("on shot side", &sdk::g_config_system->on_shot_side, { "off", "left", "right", "opposite", "switch" });
@@ -921,8 +904,8 @@ namespace supremacy {
 			}
 			ui::EndChild();
 
-			ui::SetNextWindowPos(posDouble(1));
-			ui::BeginChild("other", child_size_d);
+			ui::SetNextWindowPos(calc_pos(1));
+			ui::BeginChild("other", child_size);
 			{
 				ui::Checkbox("fake lag", &sdk::g_config_system->fake_lag);
 				ui::SingleSelect("amount", &sdk::g_config_system->amount, { "dynamic", "maximal", "switch", "break lc" });
@@ -935,9 +918,8 @@ namespace supremacy {
 			ui::EndChild();
 		}
 		
-		if (this->m_current_tab == 2)
-		{
-			ui::SetNextWindowPos(posDouble(0));
+		if (this->m_current_tab == 2) {
+			ui::SetNextWindowPos(calc_pos(0));
 			ui::BeginChild("player esp", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30 - 30));
 			{
 				ui::Checkbox("teammates", &sdk::g_config_system->teammates);
@@ -1031,7 +1013,7 @@ namespace supremacy {
 			}
 			ui::EndChild();
 
-			ui::SetNextWindowPos(posDouble(1));
+			ui::SetNextWindowPos(calc_pos(1));
 			ui::BeginChild("other esp", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30));
 			{
 				ui::Checkbox("radar", &sdk::g_config_system->radar);
@@ -1091,8 +1073,7 @@ namespace supremacy {
 			ui::EndChild();
 		}
 
-		if (this->m_current_tab == 3)
-		{
+		if (this->m_current_tab == 3) {
 			ui::SetNextWindowPos(ImVec2(ui::GetWindowPos().x + 26 + (ui::GetWindowSize().x / 2 - 36) * 0 + 20 * 0, ui::GetWindowPos().y + 52 + 27));
 			ui::BeginChild("settings", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30 - 30 - 120 + 24));
 			{
@@ -1128,7 +1109,7 @@ namespace supremacy {
 			}
 			ui::EndChild();
 
-			ui::SetNextWindowPos(posDouble(1));
+			ui::SetNextWindowPos(calc_pos(1));
 			ui::BeginChild("others", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 + 27 - 94 + 70 + 37));
 			{
 				ui::Checkbox("override fov", &sdk::g_config_system->override_fov);
@@ -1172,8 +1153,7 @@ namespace supremacy {
 			ui::EndChild();
 		}
 
-		if (this->m_current_tab == 4)
-		{
+		if (this->m_current_tab == 4) {
 			sdk::g_config_system->menu();
 
 			ui::SetNextWindowPos(ImVec2(ui::GetWindowPos().x - 4 + 26 + (ui::GetWindowSize().x / 2 - 36) * 1 + 20 * 1, ui::GetWindowPos().y + 52 + 27));
@@ -1184,8 +1164,7 @@ namespace supremacy {
 			ui::EndChild();
 		}
 
-		if (this->m_current_tab == 5)
-		{
+		if (this->m_current_tab == 5) {
 			//skins::get().menu();
 
 			//ui::EndChild();
@@ -1194,8 +1173,7 @@ namespace supremacy {
 		ui::End();
 	}
 
-	void c_menu::draw_end()
-	{
+	void c_menu::draw_end()	{
 		if (!this->m_initialized)
 			return;
 
@@ -1204,8 +1182,7 @@ namespace supremacy {
 		ImGui_ImplDX9_RenderDrawData(ui::GetDrawData());
 	}
 
-	void c_menu::handle()
-	{
+	void c_menu::handle() {
 		if (!this->m_is_opened && ui::GetStyle().Alpha > 0.f) {
 			float fc = 255.f / 0.2f * ui::GetIO().DeltaTime;
 			ui::GetStyle().Alpha = std::clamp(ui::GetStyle().Alpha - fc / 255.f, 0.f, 1.f);
@@ -1217,18 +1194,15 @@ namespace supremacy {
 		}
 	}
 
-	bool c_menu::is_menu_initialized()
-	{
+	bool c_menu::is_menu_initialized() {
 		return this->m_initialized;
 	}
 
-	bool c_menu::is_menu_opened()
-	{
+	bool c_menu::is_menu_opened() {
 		return this->m_is_opened;
 	}
 
-	void c_menu::set_menu_opened(bool v)
-	{
+	void c_menu::set_menu_opened(bool v) {
 		this->m_is_opened = settings::m_is_opened = v;
 	}
 }

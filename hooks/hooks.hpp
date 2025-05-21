@@ -45,8 +45,8 @@ namespace supremacy::hooks {
 	);
 	inline decltype( &draw_set_clr ) orig_draw_set_clr{};
 
-	void __stdcall chl_create_move_proxy( const int seq_number, const float input_sample_frame_time, const bool active );
-	void __stdcall chl_create_move( const int seq_number, const float input_sample_frame_time, const bool active, bool& send_packet );
+	void __stdcall chl_create_move_proxy( const int sequence_number, const float input_sample_frame_time, const bool active );
+	void __stdcall chl_create_move( const int sequence_number, const float input_sample_frame_time, const bool active, bool& send_packet );
 
 	using orig_chl_create_move_t = void( __thiscall* )( valve::c_client* const, const int, const float, const bool );
 	inline orig_chl_create_move_t orig_chl_create_move{};
@@ -84,6 +84,9 @@ namespace supremacy::hooks {
 
 	void __fastcall packet_end( const std::uintptr_t ecx, const std::uintptr_t edx );
 	inline decltype( &packet_end ) orig_packet_end{};
+
+	void __fastcall run_command(const std::uintptr_t ecx, const std::uintptr_t edx, valve::c_player* const player, valve::user_cmd_t* user_cmd, valve::c_move_helper* move_helper);
+	inline decltype(&run_command) orig_run_command{};
 
 	void __fastcall physics_simulate( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &physics_simulate ) orig_physics_simulate{};

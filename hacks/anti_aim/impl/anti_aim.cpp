@@ -185,7 +185,7 @@ namespace supremacy::hacks {
 				m_auto_dir_side = (sdk::g_config_system->automatic_side_selection == 1 ? diff >= 0.f : diff < 0.f);
 
 				if (std::abs(sdk::g_config_system->yaw) > 90.f)
-					m_auto_dir_side = !m_auto_dir_side;
+					m_auto_dir_side = -m_auto_dir_side;
 
 				if (should_freestand)
 					m_auto_dir_side = 0;

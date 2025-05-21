@@ -177,6 +177,7 @@
     <ClCompile Include="dependencies\minhook\hde\hde32.c" />
     <ClCompile Include="dependencies\minhook\hook.c" />
     <ClCompile Include="dependencies\minhook\trampoline.c" />
+    <ClCompile Include="dependencies\threading\new_threads.cpp" />
     <ClCompile Include="hacks\aim_bot\impl\aim_bot.cpp" />
     <ClCompile Include="hacks\anim_sync\impl\anim_sync.cpp" />
     <ClCompile Include="hacks\anti_aim\impl\anti_aim.cpp" />
@@ -227,6 +228,7 @@
     <ClInclude Include="dependencies\minhook\trampoline.h" />
     <ClInclude Include="dependencies\icons.hpp" />
     <ClInclude Include="dependencies\syscall.hpp" />
+    <ClInclude Include="dependencies\threading\new_threads.h" />
     <ClInclude Include="dependencies\xorstr.hpp" />
     <ClInclude Include="hacks\aim_bot\aim_bot.hpp" />
     <ClInclude Include="hacks\anim_sync\anim_sync.hpp" />
