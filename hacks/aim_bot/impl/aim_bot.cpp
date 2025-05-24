@@ -1,30 +1,6 @@
 #include "../../../supremacy.hpp"
 #include "../dependencies/threading/new_threads.h"
 
-enum Hitboxes_t : int {
-	HITBOX_HEAD = 0,
-	HITBOX_NECK,
-	// HITBOX_LOWER_NECK, // remove this for desync version
-	HITBOX_PELVIS,
-	HITBOX_STOMACH,
-	HITBOX_LOWER_CHEST,
-	HITBOX_CHEST,
-	HITBOX_UPPER_CHEST,
-	HITBOX_R_THIGH,
-	HITBOX_L_THIGH,
-	HITBOX_R_CALF,
-	HITBOX_L_CALF,
-	HITBOX_R_FOOT,
-	HITBOX_L_FOOT,
-	HITBOX_R_HAND,
-	HITBOX_L_HAND,
-	HITBOX_R_UPPER_ARM,
-	HITBOX_R_FOREARM,
-	HITBOX_L_UPPER_ARM,
-	HITBOX_L_FOREARM,
-	HITBOX_MAX
-};
-
 namespace supremacy::hacks {
 	std::size_t c_aim_bot::calc_points_count(const int hitgroups, const int multi_points) const {
 		std::size_t ret{};
@@ -176,7 +152,8 @@ namespace supremacy::hacks {
 		target.m_points.reserve(points_count);
 
 		for (std::size_t i{}; i < m_hitgroups.size(); ++i) {
-			if (!((1 << i) & hitgroups))
+			if (!is_taser
+				&& (!((1 << i) & hitgroups)))
 				continue;
 
 			for (const auto& index : m_hitgroups.at(i)) {
