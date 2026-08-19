@@ -706,7 +706,7 @@ namespace supremacy::valve {
 		render_end
 	};
 
-	using bones_t = std::array< mat3x4_t, 128u >;
+	using bones_t = std::array< mat3x4_t, 256u >;
 
 	struct ik_context_t {};
 
@@ -1274,6 +1274,29 @@ namespace supremacy::valve {
 		float			m_cycle{};
 		c_player*		m_owner{};
 		int				m_invalidate_physics_bits{};
+
+		bool operator==(const anim_layer_t& other) const
+		{
+			return m_sequence == other.m_sequence && m_weight == other.m_weight &&
+				m_weight_delta_rate == other.m_weight_delta_rate &&
+				m_playback_rate == other.m_playback_rate && m_cycle == other.m_cycle
+				&& m_prev_cycle == other.m_prev_cycle && m_order == other.m_order;
+		}
+		anim_layer_t& operator=(const anim_layer_t& rhs)
+		{
+			if (this == &rhs)
+				return *this;
+
+			this->m_sequence = rhs.m_sequence;
+			this->m_cycle = rhs.m_cycle;
+			this->m_playback_rate = rhs.m_playback_rate;
+			this->m_prev_cycle = rhs.m_prev_cycle;
+			this->m_weight = rhs.m_weight;
+			this->m_weight_delta_rate = rhs.m_weight_delta_rate;
+			this->m_order = rhs.m_order;
+
+			return *this;
+		}
 	};
 
 	using anim_layers_t = std::array< anim_layer_t, 13u >;

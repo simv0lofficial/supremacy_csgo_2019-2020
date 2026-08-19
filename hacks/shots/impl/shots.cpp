@@ -117,8 +117,8 @@ namespace supremacy::hacks {
 					else {
 						++shot.m_target.m_entry->m_misses;
 
-						if ((shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client)
-							|| shot.m_target.m_point.m_intersections >= 3) {
+						if ((!SKIPFAKEPLAYERCHECKS && shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client)
+							|| shot.m_target.m_point.m_intersections_120 >= 3) {
 #ifdef ALPHA
 							util::g_notify->print_logo();
 							util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
@@ -178,7 +178,7 @@ namespace supremacy::hacks {
 							}							
 
 							if (shot.m_target.m_lag_record->m_trying_to_resolve
-								&& shot.m_target.m_point.m_intersections < 3
+								&& shot.m_target.m_point.m_intersections_120 < 3
 								&& (shot.m_target.m_lag_record->m_flags & valve::e_ent_flags::on_ground)
 								&& !shot.m_target.m_lag_record->m_shot
 								&& !shot.m_target.m_lag_record->m_throw) {
@@ -188,10 +188,6 @@ namespace supremacy::hacks {
 
 								if (shot.m_target.m_lag_record->m_side
 									&& shot.m_target.m_entry->m_prev_type == 2)
-									shot.m_target.m_entry->m_try_trace_resolver = false;
-
-								if (shot.m_target.m_lag_record->m_side
-									&& shot.m_target.m_entry->m_prev_type == 3)
 									shot.m_target.m_entry->m_try_anim_resolver = false;
 
 								const auto wrong_anim_side = shot.m_target.m_lag_record->m_side;
@@ -211,6 +207,12 @@ namespace supremacy::hacks {
 									new_anim_side = 2;
 									break;
 								case 4:
+									new_anim_side = 1;
+									break;
+								case 5:
+									new_anim_side = 2;
+									break;
+								case 6:
 									new_anim_side = 1;
 									break;
 								}
@@ -495,7 +497,6 @@ namespace supremacy::hacks {
 
 				entry.m_misses = 0;
 				entry.m_try_lby_resolver = true;
-				entry.m_try_trace_resolver = true;
 				entry.m_try_anim_resolver = true;
 			}
 		}

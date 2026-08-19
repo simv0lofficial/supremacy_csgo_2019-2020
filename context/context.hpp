@@ -83,10 +83,10 @@ namespace supremacy {
 								m_start_drawing{}, m_finish_drawing{}, m_add_clred_text{}, m_calc_text_size{},
 								m_set_font_glyph_set{}, m_has_c4{}, m_ret_insert_into_tree{}, m_smoke_count{},
 								m_disable_post_processing{}, m_crosshair_ret{}, m_ret_to_scope_clear{}, m_ret_to_scope_blurry{},
-								m_ret_to_fire_bullet{}, m_ret_set_first_person_viewangles{}, m_allow_extrapolation{},
-								m_item_system{}, m_hud{}, m_find_hud_element{}, m_clear_hud_wpn{},
-								m_clear_hud_wpn_icon{}, m_construct_voice_data_message{}, m_compute_hitbox_surround_box{}, m_lock_studio_hdr{},
-								m_setup_movement{}, m_get_sequence_linear_motion{}, m_invalidate_physics_recursive{}, m_thread_id_allocated{};
+								m_ret_to_eye_pos_and_vectors{}, m_allow_extrapolation{}, m_item_system{}, m_hud{}, m_find_hud_element{},
+								m_clear_hud_wpn{}, m_clear_hud_wpn_icon{}, m_construct_voice_data_message{}, m_compute_hitbox_surround_box{}, 
+								m_lock_studio_hdr{}, m_setup_movement{}, m_get_sequence_linear_motion{}, m_invalidate_physics_recursive{},
+								m_thread_id_allocated{}, m_choke_limit{}, m_ret_to_extrapolation{};
 
 			int*				m_pred_seed{};
 			valve::c_player*	m_pred_player{};
@@ -122,8 +122,6 @@ namespace supremacy {
 			struct {
 				float m_in{}, m_out{};
 			}		m_latency{};
-
-			int m_server_tick{};
 
 			bool m_on_local_server{};
 		}						m_net_info{};

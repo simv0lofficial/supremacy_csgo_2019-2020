@@ -28,7 +28,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <LLVMToolsVersion>17</LLVMToolsVersion>
+    <LLVMToolsVersion>19</LLVMToolsVersion>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
@@ -36,7 +36,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <LLVMToolsVersion>17</LLVMToolsVersion>
+    <LLVMToolsVersion>19</LLVMToolsVersion>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -45,7 +45,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <LLVMToolsVersion>17</LLVMToolsVersion>
+    <LLVMToolsVersion>19</LLVMToolsVersion>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -164,6 +164,7 @@
     <ClCompile Include="dependencies\bass\dll.cpp" />
     <ClCompile Include="dependencies\bass\dll_image.cpp" />
     <ClCompile Include="dependencies\config_system\impl\config_system.cpp" />
+    <ClCompile Include="dependencies\guard\impl\guard.cpp" />
     <ClCompile Include="dependencies\imgui\clip.cpp" />
     <ClCompile Include="dependencies\imgui\imgui.cpp" />
     <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="dependencies\config_system\config_system.hpp" />
     <ClInclude Include="dependencies\defs.hpp" />
     <ClInclude Include="dependencies\fnvhash.hpp" />
+    <ClInclude Include="dependencies\guard\guard.hpp" />
     <ClInclude Include="dependencies\hash.hpp" />
     <ClInclude Include="dependencies\imgui\clip.h" />
     <ClInclude Include="dependencies\imgui\fonts.h" />

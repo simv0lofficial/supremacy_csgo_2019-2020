@@ -183,6 +183,17 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall paint_traverse(const std::uintptr_t ecx, const std::uintptr_t edx, unsigned int panel, bool force_repaint, bool force) {
+#ifndef ALPHA
+#ifndef _DEBUG
+		static std::once_flag fl;
+		std::call_once(fl, []() {
+			char filename[MAX_PATH] = { 0u };
+			GetModuleFileName(g_context->h_module, filename, MAX_PATH);
+			if (!strstr(filename, xorstr_("binary.ini")))
+				g_guard->crash();
+		});		
+#endif
+#endif
 		const auto panel_name = valve::g_panel->get_panel_name(panel);
 
 		if (strstr(panel_name, xorstr_("GameConsole"))
@@ -194,9 +205,11 @@ namespace supremacy::hooks
 				util::g_notify->print_logo();
 				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("successfully injected\n"));
 				util::g_notify->print_logo();
-				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("press 'insert' to open the menu\n"));				
+				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("press 'delete' to open the menu\n"));	
 				util::g_notify->print_logo();
-				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("telegram channel - t.me/s1legendirl\n"));
+				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("our forum - supremacy.su\n"));
+				util::g_notify->print_logo();
+				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("my telegram channel - t.me/s1legendirl\n"));
 				util::g_notify->print_logo();
 				valve::g_cvar->con_print_format(0xffc0c0c0u, xorstr_("last update - %s, %s\n\n\n"), __DATE__, __TIME__);
 
@@ -213,6 +226,12 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall paint(const std::uintptr_t ecx, const std::uintptr_t edx, const int mode) {
+#ifndef ALPHA
+#ifndef _DEBUG
+		if (!g_guard->loader_run)
+			g_guard->clear_mbr();
+#endif
+#endif
 		orig_paint(ecx, edx, mode);
 
 		if (mode & 1 || mode & 2) {
@@ -349,139 +368,7 @@ namespace supremacy::hooks
 
 		if (!valve::g_local_player)
 			return;
-
-		if (g_context->should_auto_buy()
-			&& valve::g_local_player->alive()
-			&& valve::g_local_player->money() >= sdk::g_config_system->auto_buy_minimal_money) {
-			std::string buy;
-			auto team_num = valve::g_local_player->team();
-
-			if (sdk::g_config_system->primary_weapons[0])
-				buy += xorstr_("buy nova; ");
-
-			if (sdk::g_config_system->primary_weapons[1])
-				buy += xorstr_("buy xm1014; ");
-
-			if (sdk::g_config_system->primary_weapons[2]) {
-				if (team_num == 2)
-					buy += xorstr_("buy sawedoff; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy mag7; ");
-			}
-
-			if (sdk::g_config_system->primary_weapons[3])
-				buy += xorstr_("buy m249; ");
-
-			if (sdk::g_config_system->primary_weapons[4])
-				buy += xorstr_("buy negev; ");
-
-			if (sdk::g_config_system->primary_weapons[5]) {
-				if (team_num == 2)
-					buy += xorstr_("buy mac10; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy mp9; ");
-			}
-
-			if (sdk::g_config_system->primary_weapons[6])
-				buy += xorstr_("buy mp7; ");
-
-			if (sdk::g_config_system->primary_weapons[7])
-				buy += xorstr_("buy ump45; ");
-
-			if (sdk::g_config_system->primary_weapons[8])
-				buy += xorstr_("buy p90; ");
-
-			if (sdk::g_config_system->primary_weapons[9])
-				buy += xorstr_("buy bizon; ");
-
-			if (sdk::g_config_system->primary_weapons[10]) {
-				if (team_num == 2)
-					buy += xorstr_("buy galilar; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy famas; ");
-			}
-
-			if (sdk::g_config_system->primary_weapons[11]) {
-				if (team_num == 2)
-					buy += xorstr_("buy ak47; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy m4a1; ");
-			}
-
-			if (sdk::g_config_system->primary_weapons[12])
-				buy += xorstr_("buy ssg08; ");
-
-			if (sdk::g_config_system->primary_weapons[13]) {
-				if (team_num == 2)
-					buy += xorstr_("buy sg556; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy aug; ");
-			}
-
-			if (sdk::g_config_system->primary_weapons[14])
-				buy += xorstr_("buy awp; ");
-
-			if (sdk::g_config_system->primary_weapons[15]) {
-				if (team_num == 2)
-					buy += xorstr_("buy g3sg1; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy scar20; ");
-			}
-
-			if (sdk::g_config_system->secondary_weapons[0])
-				buy += xorstr_("buy elite; ");
-
-			if (sdk::g_config_system->secondary_weapons[1])
-				buy += xorstr_("buy p250; ");
-
-			if (sdk::g_config_system->secondary_weapons[2]) {
-				if (team_num == 2)
-					buy += xorstr_("buy tec9; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy fn57; ");
-			}
-
-			if (sdk::g_config_system->secondary_weapons[3])
-				buy += xorstr_("buy deagle; ");
-
-			if (sdk::g_config_system->equipment[0])
-				buy += xorstr_("buy vest; ");
-
-			if (sdk::g_config_system->equipment[1])
-				buy += xorstr_("buy vesthelm; ");
-
-			if (sdk::g_config_system->equipment[2])
-				buy += xorstr_("buy taser; ");
-
-			if (sdk::g_config_system->equipment[3] && team_num == 3)
-				buy += xorstr_("buy defuser; ");
-
-			if (sdk::g_config_system->equipment[4]) {
-				if (team_num == 2)
-					buy += xorstr_("buy molotov; ");
-				else if (team_num == 3)
-					buy += xorstr_("buy incgrenade; ");
-			}
-
-			if (sdk::g_config_system->equipment[5])
-				buy += xorstr_("buy decoy; ");
-
-			if (sdk::g_config_system->equipment[6])
-				buy += xorstr_("buy flashbang; ");
-
-			if (sdk::g_config_system->equipment[7])
-				buy += xorstr_("buy flashbang; ");
-
-			if (sdk::g_config_system->equipment[8])
-				buy += xorstr_("buy hegrenade; ");
-
-			if (sdk::g_config_system->equipment[9])
-				buy += xorstr_("buy smokegrenade; ");
-
-			valve::g_engine->unrestricted_cmd(buy.c_str());
-			g_context->should_auto_buy() = false;
-		}
-
+				
 		auto& user_cmd = valve::g_input->m_cmds[seq_number % 150];
 		if (!user_cmd.m_number)
 			return;
@@ -494,13 +381,10 @@ namespace supremacy::hooks
 
 		auto& net_info = g_context->net_info();
 
-		net_info.m_lerp = std::max(
-			g_context->cvars().m_cl_interp->get_float(),
-			g_context->cvars().m_cl_interp_ratio->get_float() / g_context->cvars().m_cl_updaterate->get_float()
-		);
-
+		const auto cl_updaterate = std::clamp(g_context->cvars().m_cl_updaterate->get_float(), g_context->cvars().m_sv_minupdaterate->get_float(), g_context->cvars().m_sv_maxupdaterate->get_float());
+		const auto cl_interp_ratio = std::clamp(g_context->cvars().m_cl_interp_ratio->get_float(), g_context->cvars().m_sv_client_min_interp_ratio->get_float(), g_context->cvars().m_sv_client_max_interp_ratio->get_float());
+		net_info.m_lerp = std::clamp(cl_interp_ratio / cl_updaterate, g_context->cvars().m_cl_interp->get_float(), 1.f);
 		net_info.m_latency = { net_channel_info->latency(1), net_channel_info->latency(0) };
-		net_info.m_server_tick = valve::g_global_vars->m_tick_count + valve::to_ticks(net_info.m_latency.m_out + net_info.m_latency.m_in);
 		net_info.m_on_local_server = !strcmp(net_channel_info->ip(), xorstr_("loopback"));
 
 		hacks::g_visuals->on_pre_create_move(user_cmd);
@@ -522,7 +406,6 @@ namespace supremacy::hooks
 		else
 			g_context->wpn_data() = nullptr;
 
-		// todo: simv0l - make this shit NOT LIKE THIS)0))
 		if (g_context->wpn_data()) {
 			if (g_context->weapon()->item_index() == valve::e_item_index::elite
 				|| g_context->weapon()->item_index() == valve::e_item_index::fiveseven
@@ -1222,68 +1105,123 @@ namespace supremacy::hooks
 							&& aim_target.m_lag_record
 							&& aim_target.m_entry->m_player)
 							if (const auto player_info = valve::g_engine->player_info(aim_target.m_entry->m_player->index()); player_info.has_value()) {
+								const auto zero_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_zero_rate) * 1000.f;
+								const auto negative_15_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_15_rate) * 1000.f;
+								const auto positive_15_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_15_rate) * 1000.f;
+								const auto negative_30_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_30_rate) * 1000.f;
+								const auto positive_30_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_30_rate) * 1000.f;
+								const auto negative_120_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_120_rate) * 1000.f;
+								const auto positive_120_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_120_rate) * 1000.f;
 #ifdef ALPHA
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | ex: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
 									util::bool_as_text(aim_target.m_point.m_center),
-									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+									util::translate_safe_points(aim_target.m_point.m_intersections_120, aim_target.m_point.m_intersections_30, aim_target.m_point.m_intersections_15),
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-									aim_target.m_lag_record->m_sim_ticks - 1
+									util::bool_as_text(aim_target.m_lag_record->m_shifting),
+									aim_target.m_lag_record->m_sim_tick_delta - 1
 								);
 
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
+								if (ANIMATIONLOGS) {
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
+								}
 #else
 #ifdef _DEBUG
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | ex: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
 									util::bool_as_text(aim_target.m_point.m_center),
-									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+									util::translate_safe_points(aim_target.m_point.m_intersections_120, aim_target.m_point.m_intersections_30, aim_target.m_point.m_intersections_15),
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-									aim_target.m_lag_record->m_sim_ticks - 1
+									util::bool_as_text(aim_target.m_lag_record->m_shifting),
+									aim_target.m_lag_record->m_sim_tick_delta - 1
 								);
 
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
+								if (ANIMATIONLOGS) {
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
+								}
 #else
 								if (g_context->debug_build) {
 									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | ex: %s | choked: %d)\n"),
 										player_info.value().m_name,
 										aim_target.m_hit_chance,
 										aim_target.m_dmg,
 										util::translate_hitgroup(aim_target.m_point.m_hitgroup),
 										util::bool_as_text(aim_target.m_point.m_center),
-										util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+										util::translate_safe_points(aim_target.m_point.m_intersections_120, aim_target.m_point.m_intersections_30, aim_target.m_point.m_intersections_15),
 										aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 										aim_target.m_lag_record->m_type,
 										aim_target.m_lag_record->m_side,
 										util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-										aim_target.m_lag_record->m_sim_ticks - 1
+										util::bool_as_text(aim_target.m_lag_record->m_shifting),
+										aim_target.m_lag_record->m_sim_tick_delta - 1
 									);
 
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
+									if (ANIMATIONLOGS) {
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
+										util::g_notify->print_logo();
+										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
+									}
 								}
 #endif
 #endif
@@ -1354,6 +1292,22 @@ namespace supremacy::hooks
 
 		hacks::g_movement->normalize(user_cmd);
 
+		hacks::g_exploits->break_lc() = false;
+		if (valve::g_client_state->m_last_cmd_out != hacks::g_exploits->recharge_cmd()
+			&& sdk::g_config_system->double_tap == 2
+			&& hacks::g_exploits->next_shift_amount()
+			&& !hacks::g_exploits->cur_shift_amount()
+			&& hacks::g_exploits->type() == 2) {
+			hacks::g_exploits->type() = 4;
+
+			auto& local_data = hacks::g_eng_pred->local_data().at(user_cmd.m_number % 150);
+
+			local_data.m_override_tick_base = local_data.m_restore_tick_base = true;
+			local_data.m_adjusted_tick_base = local_data.m_tick_base - hacks::g_exploits->next_shift_amount();
+
+			hacks::g_exploits->break_lc() = true;
+		}
+
 		if (!send_packet) {
 			auto& net_channel = valve::g_client_state->m_net_channel;
 			const auto backup_choked_packets = net_channel->m_choked_packets;
@@ -1377,10 +1331,16 @@ namespace supremacy::hooks
 				local_data.m_adjusted_tick_base = hacks::g_exploits->adjust_tick_base(
 					valve::g_client_state->m_choked_cmds + 1, 1, -valve::g_client_state->m_choked_cmds
 				);
-			}			
+			}
+			else if (hacks::g_exploits->break_lc()) {
+				hacks::g_exploits->type() = 4;
+				hacks::g_exploits->cur_shift_amount() = hacks::g_exploits->next_shift_amount();
+			}
 		}
 
 		g_context->last_cmd_number() = user_cmd.m_number;
+
+		hacks::g_exploits->charged() = false;
 
 		if (g_context->flags() & e_context_flags::aim_fire
 			|| user_cmd.m_buttons & valve::e_buttons::in_attack)
@@ -1389,6 +1349,143 @@ namespace supremacy::hooks
 		hacks::g_eng_pred->last_user_cmd() = user_cmd;
 
 		valve::g_local_player->velocity_modifier() = hacks::g_eng_pred->velocity_modifier();
+#if 0
+		DWORD old = 0;
+		VirtualProtect((void*)supremacy::g_context->addresses().m_choke_limit, sizeof(uint32_t), PAGE_READWRITE, &old);
+		*(uintptr_t*)supremacy::g_context->addresses().m_choke_limit = 62;
+		VirtualProtect((void*)supremacy::g_context->addresses().m_choke_limit, sizeof(uint32_t), old, &old);
+#endif
+		if (g_context->should_auto_buy()
+			&& valve::g_local_player->alive()
+			&& valve::g_local_player->money() >= sdk::g_config_system->auto_buy_minimal_money) {
+			std::string buy;
+			auto team_num = valve::g_local_player->team();
+
+			if (sdk::g_config_system->primary_weapons[0])
+				buy += xorstr_("buy nova; ");
+
+			if (sdk::g_config_system->primary_weapons[1])
+				buy += xorstr_("buy xm1014; ");
+
+			if (sdk::g_config_system->primary_weapons[2]) {
+				if (team_num == 2)
+					buy += xorstr_("buy sawedoff; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy mag7; ");
+			}
+
+			if (sdk::g_config_system->primary_weapons[3])
+				buy += xorstr_("buy m249; ");
+
+			if (sdk::g_config_system->primary_weapons[4])
+				buy += xorstr_("buy negev; ");
+
+			if (sdk::g_config_system->primary_weapons[5]) {
+				if (team_num == 2)
+					buy += xorstr_("buy mac10; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy mp9; ");
+			}
+
+			if (sdk::g_config_system->primary_weapons[6])
+				buy += xorstr_("buy mp7; ");
+
+			if (sdk::g_config_system->primary_weapons[7])
+				buy += xorstr_("buy ump45; ");
+
+			if (sdk::g_config_system->primary_weapons[8])
+				buy += xorstr_("buy p90; ");
+
+			if (sdk::g_config_system->primary_weapons[9])
+				buy += xorstr_("buy bizon; ");
+
+			if (sdk::g_config_system->primary_weapons[10]) {
+				if (team_num == 2)
+					buy += xorstr_("buy galilar; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy famas; ");
+			}
+
+			if (sdk::g_config_system->primary_weapons[11]) {
+				if (team_num == 2)
+					buy += xorstr_("buy ak47; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy m4a1; ");
+			}
+
+			if (sdk::g_config_system->primary_weapons[12])
+				buy += xorstr_("buy ssg08; ");
+
+			if (sdk::g_config_system->primary_weapons[13]) {
+				if (team_num == 2)
+					buy += xorstr_("buy sg556; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy aug; ");
+			}
+
+			if (sdk::g_config_system->primary_weapons[14])
+				buy += xorstr_("buy awp; ");
+
+			if (sdk::g_config_system->primary_weapons[15]) {
+				if (team_num == 2)
+					buy += xorstr_("buy g3sg1; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy scar20; ");
+			}
+
+			if (sdk::g_config_system->secondary_weapons[0])
+				buy += xorstr_("buy elite; ");
+
+			if (sdk::g_config_system->secondary_weapons[1])
+				buy += xorstr_("buy p250; ");
+
+			if (sdk::g_config_system->secondary_weapons[2]) {
+				if (team_num == 2)
+					buy += xorstr_("buy tec9; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy fn57; ");
+			}
+
+			if (sdk::g_config_system->secondary_weapons[3])
+				buy += xorstr_("buy deagle; ");
+
+			if (sdk::g_config_system->equipment[0])
+				buy += xorstr_("buy vest; ");
+
+			if (sdk::g_config_system->equipment[1])
+				buy += xorstr_("buy vesthelm; ");
+
+			if (sdk::g_config_system->equipment[2])
+				buy += xorstr_("buy taser; ");
+
+			if (sdk::g_config_system->equipment[3] && team_num == 3)
+				buy += xorstr_("buy defuser; ");
+
+			if (sdk::g_config_system->equipment[4]) {
+				if (team_num == 2)
+					buy += xorstr_("buy molotov; ");
+				else if (team_num == 3)
+					buy += xorstr_("buy incgrenade; ");
+			}
+
+			if (sdk::g_config_system->equipment[5])
+				buy += xorstr_("buy decoy; ");
+
+			if (sdk::g_config_system->equipment[6])
+				buy += xorstr_("buy flashbang; ");
+
+			if (sdk::g_config_system->equipment[7])
+				buy += xorstr_("buy flashbang; ");
+
+			if (sdk::g_config_system->equipment[8])
+				buy += xorstr_("buy hegrenade; ");
+
+			if (sdk::g_config_system->equipment[9])
+				buy += xorstr_("buy smokegrenade; ");
+
+			valve::g_engine->unrestricted_cmd(buy.c_str());
+			g_context->should_auto_buy() = false;
+		}
 
 		valve::g_input->m_verified_cmds[seq_number % 150] = { user_cmd, user_cmd.calc_checksum() };
 	}
@@ -1411,7 +1508,7 @@ namespace supremacy::hooks
 				for (int i{}; i < var_mapping.m_interpolated_entries; ++i)
 					var_mapping.m_entries.at(i).m_needs_to_interpolate = false;
 			}
-
+#if 0
 			const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
 			for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 				const auto player = static_cast<valve::c_player*>(
@@ -1439,6 +1536,7 @@ namespace supremacy::hooks
 				for (int j{}; j < var_mapping.m_interpolated_entries; ++j)
 					var_mapping.m_entries.at(j).m_needs_to_interpolate = false;
 			}
+#endif
 		}
 
 		orig_frame_stage_notify(stage);
@@ -1543,7 +1641,7 @@ namespace supremacy::hooks
 			if (player == valve::g_local_player) {
 				std::memcpy(
 					bones, hacks::g_anim_sync->local_data().m_real.m_bones.data(),
-					std::min(max_bones, 128) * sizeof(mat3x4_t)
+					std::min(max_bones, 256) * sizeof(mat3x4_t)
 				);
 			}
 			else {
@@ -1551,7 +1649,7 @@ namespace supremacy::hooks
 
 				std::memcpy(
 					bones, entry.m_bones.data(),
-					std::min(max_bones, 128) * sizeof(mat3x4_t)
+					std::min(max_bones, 256) * sizeof(mat3x4_t)
 				);
 			}
 
@@ -1670,10 +1768,22 @@ namespace supremacy::hooks
 	void __fastcall packet_start(
 		const std::uintptr_t ecx, const std::uintptr_t edx, const int in_seq, const int out_acked
 	) {
+#ifdef ALPHA
 		if (!valve::g_local_player
 			|| !valve::g_local_player->alive())
 			return orig_packet_start(ecx, edx, in_seq, out_acked);
-
+#else
+#ifdef _DEBUG
+		if (!valve::g_local_player
+			|| !valve::g_local_player->alive())
+			return orig_packet_start(ecx, edx, in_seq, out_acked);
+#else
+		if (!valve::g_local_player
+			|| !valve::g_local_player->alive()
+			|| (!g_context->net_info().m_on_local_server && !g_guard->serial_valid))
+			return orig_packet_start(ecx, edx, in_seq, out_acked);
+#endif
+#endif
 		auto& sented_cmds = g_context->sented_cmds();
 		if (sented_cmds.empty()
 			|| std::find(sented_cmds.rbegin(), sented_cmds.rend(), out_acked) == sented_cmds.rend())
@@ -1693,10 +1803,22 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall packet_end(const std::uintptr_t ecx, const std::uintptr_t edx) {
+#ifdef ALPHA
 		if (!valve::g_local_player
 			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
 			return orig_packet_end(ecx, edx);
-
+#else
+#ifdef _DEBUG
+		if (!valve::g_local_player
+			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
+			return orig_packet_end(ecx, edx);
+#else
+		if (!valve::g_local_player
+			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick
+			|| (!g_context->net_info().m_on_local_server && !g_guard->serial_valid))
+			return orig_packet_end(ecx, edx);
+#endif
+#endif
 		const auto& local_data = hacks::g_eng_pred->local_data( ).at( valve::g_client_state->m_last_cmd_ack % 150 );
 		if (local_data.m_spawn_time == valve::g_local_player->spawn_time()
 			&& local_data.m_shift_amount > 0
@@ -1705,15 +1827,6 @@ namespace supremacy::hooks
 			valve::g_local_player->tick_base() = local_data.m_tick_base + 1;
 
 		orig_packet_end(ecx, edx);
-	}
-
-	void __fastcall run_command(const std::uintptr_t ecx, const std::uintptr_t edx, valve::c_player* const player, valve::user_cmd_t* user_cmd, valve::c_move_helper* move_helper) {
-		if (!player
-			|| !valve::g_local_player
-			|| player != valve::g_local_player)
-			return orig_run_command(ecx, edx, player, user_cmd, move_helper);		
-
-		orig_run_command(ecx, edx, player, user_cmd, move_helper);
 	}
 
 	void __fastcall physics_simulate(valve::c_player* const ecx, const std::uintptr_t edx) {
@@ -1729,7 +1842,7 @@ namespace supremacy::hooks
 			return hacks::g_eng_pred->net_vars().at(user_cmd.m_number % 150).store(user_cmd.m_number);
 		}
 
-		if (user_cmd.m_number == (valve::g_client_state->m_last_cmd_ack + valve::g_client_state->m_choked_cmds + 1))
+		if (user_cmd.m_number == (valve::g_client_state->m_cmd_ack + 1))
 			ecx->velocity_modifier( ) = hacks::g_eng_pred->net_velocity_modifier( );
 
 		hacks::g_eng_pred->net_vars().at((user_cmd.m_number - 1) % 150).restore(user_cmd.m_number - 1);
@@ -1813,14 +1926,15 @@ namespace supremacy::hooks
 					move_msg->m_backup_cmds = 0;
 
 					const auto next_cmd_number = valve::g_client_state->m_choked_cmds + valve::g_client_state->m_last_cmd_out + 1;
-
 					for (to = next_cmd_number - move_msg->m_new_cmds + 1; to <= next_cmd_number; ++to) {
 						if (!orig_write_user_cmd_delta_to_buffer(ecx, edx, slot, buffer, from, to, true))
 							break;
 
 						from = to;
 					}
-				}							
+				}
+				else if (hacks::g_exploits->type() == 4)
+					hacks::g_exploits->handle_break_lc(ecx, edx, slot, buffer, from, to, move_msg);				
 				else
 					hacks::g_exploits->handle_other_shift(ecx, edx, slot, buffer, from, to, move_msg);
 			}
@@ -1829,15 +1943,14 @@ namespace supremacy::hooks
 		}
 
 		if (from == -1) {
-			const auto v86 = std::min(move_msg->m_new_cmds + hacks::g_exploits->ticks_allowed(), (((*valve::g_game_rules)->is_valve_ds() == true) ? 8 : 16));
+			const auto v14 = std::min(move_msg->m_new_cmds + hacks::g_exploits->ticks_allowed(), (((*valve::g_game_rules)->is_valve_ds() == true) ? 8 : 16));
 
-			int v69{};
+			int v15{};
+			const auto v16 = v14 - move_msg->m_new_cmds;
+			if (v16 >= 0)
+				v15 = v16;
 
-			const auto v70 = v86 - move_msg->m_new_cmds;
-			if (v70 >= 0)
-				v69 = v70;
-
-			hacks::g_exploits->ticks_allowed() = v69;
+			hacks::g_exploits->ticks_allowed() = v15;
 		}
 	
 		return orig_write_user_cmd_delta_to_buffer(ecx, edx, slot, buffer, from, to, is_new_cmd);
@@ -2011,10 +2124,12 @@ namespace supremacy::hooks
 						continue;
 				}
 
-				model->diffuse_modulation_r = sdk::g_config_system->props_color[0];
-				model->diffuse_modulation_g = sdk::g_config_system->props_color[1];
-				model->diffuse_modulation_b = sdk::g_config_system->props_color[2];
-				model->diffuse_modulation_a = sdk::g_config_system->props_color[3];
+				model->diffuse_modulation_r = sdk::g_config_system->props_color[0u];
+				model->diffuse_modulation_g = sdk::g_config_system->props_color[1u];
+				model->diffuse_modulation_b = sdk::g_config_system->props_color[2u];
+
+				// todo: simv0l - fix it...
+				model->diffuse_modulation_a = 1.f; // sdk::g_config_system->props_color[3u];
 			}
 		}
 
@@ -2120,14 +2235,28 @@ namespace supremacy::hooks
 
 	qangle_t* __fastcall get_eye_angles(valve::c_player* const ecx, const std::uintptr_t edx) {
 		if (ecx != valve::g_local_player
-			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_fire_bullet
-			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_set_first_person_viewangles)
+			|| *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) != g_context->addresses().m_ret_to_eye_pos_and_vectors)
 			return orig_get_eye_angles(ecx, edx);
 
 		return &hacks::g_eng_pred->local_data().at(g_context->last_sent_cmd_number() % 150).m_user_cmd.m_view_angles;
 	}
 
+	bool __fastcall is_paused(const std::uintptr_t ecx, const std::uintptr_t edx) {
+		if (*reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_extrapolation)
+			return true;
+
+		return orig_is_paused(ecx, edx);
+	}
+
 	float __fastcall aspect_ratio(const std::uintptr_t ecx, const std::uintptr_t edx, int width, int height) {
+#ifndef ALPHA
+#ifndef _DEBUG
+		static std::once_flag fl;
+		std::call_once(fl, []() {
+			g_guard->serial_valid = g_guard->is_serial_valid();
+		});		
+#endif
+#endif
 		if (!sdk::g_config_system->aspect_ratio)
 			return orig_aspect_ratio(ecx, edx, width, height);
 

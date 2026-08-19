@@ -221,7 +221,7 @@ namespace sdk {
 		int safe_point_key_style = 1;
 		int safe_point_type;
 		int max_misses_safe_point;
-		bool double_tap;
+		int double_tap;
 		int double_tap_key;
 		int double_tap_key_style = 2;
 		int max_shift_amount = 6;
@@ -237,7 +237,7 @@ namespace sdk {
 		std::unordered_map<int, bool> pistols_safe_point_conditions;
 		int pistols_safe_point_type;
 		int pistols_max_misses_safe_point;
-		bool pistols_double_tap;
+		int pistols_double_tap;
 		int pistols_max_shift_amount = 15;
 
 		bool heavy_pistols_remove_recoil;
@@ -251,7 +251,7 @@ namespace sdk {
 		std::unordered_map<int, bool> heavy_pistols_safe_point_conditions;
 		int heavy_pistols_safe_point_type;
 		int heavy_pistols_max_misses_safe_point;
-		bool heavy_pistols_double_tap;
+		int heavy_pistols_double_tap;
 		int heavy_pistols_max_shift_amount = 15;
 
 		bool sub_machine_guns_remove_recoil;
@@ -265,7 +265,7 @@ namespace sdk {
 		std::unordered_map<int, bool> sub_machine_guns_safe_point_conditions;
 		int sub_machine_guns_safe_point_type;
 		int sub_machine_guns_max_misses_safe_point;
-		bool sub_machine_guns_double_tap;
+		int sub_machine_guns_double_tap;
 		int sub_machine_guns_max_shift_amount = 15;
 
 		bool rifles_remove_recoil;
@@ -279,7 +279,7 @@ namespace sdk {
 		std::unordered_map<int, bool> rifles_safe_point_conditions;
 		int rifles_safe_point_type;
 		int rifles_max_misses_safe_point;
-		bool rifles_double_tap;
+		int rifles_double_tap;
 		int rifles_max_shift_amount = 15;
 
 		bool auto_snipers_remove_recoil;
@@ -293,7 +293,7 @@ namespace sdk {
 		std::unordered_map<int, bool> auto_snipers_safe_point_conditions;
 		int auto_snipers_safe_point_type;
 		int auto_snipers_max_misses_safe_point;
-		bool auto_snipers_double_tap;
+		int auto_snipers_double_tap;
 		int auto_snipers_max_shift_amount = 15;
 
 		bool scout_remove_recoil;
@@ -307,7 +307,7 @@ namespace sdk {
 		std::unordered_map<int, bool> scout_safe_point_conditions;
 		int scout_safe_point_type;
 		int scout_max_misses_safe_point;
-		bool scout_double_tap;
+		int scout_double_tap;
 		int scout_max_shift_amount = 15;
 
 		bool awp_remove_recoil;
@@ -321,7 +321,7 @@ namespace sdk {
 		std::unordered_map<int, bool> awp_safe_point_conditions;
 		int awp_safe_point_type;
 		int awp_max_misses_safe_point;
-		bool awp_double_tap;
+		int awp_double_tap;
 		int awp_max_shift_amount = 15;
 
 		bool shotguns_remove_recoil;
@@ -335,7 +335,7 @@ namespace sdk {
 		std::unordered_map<int, bool> shotguns_safe_point_conditions;
 		int shotguns_safe_point_type;
 		int shotguns_max_misses_safe_point;
-		bool shotguns_double_tap;
+		int shotguns_double_tap;
 		int shotguns_max_shift_amount = 15;
 
 		bool machine_guns_remove_recoil;
@@ -349,7 +349,7 @@ namespace sdk {
 		std::unordered_map<int, bool> machine_guns_safe_point_conditions;
 		int machine_guns_safe_point_type;
 		int machine_guns_max_misses_safe_point;
-		bool machine_guns_double_tap;
+		int machine_guns_double_tap;
 		int machine_guns_max_shift_amount = 15;
 
 		bool taser_remove_recoil;
@@ -363,7 +363,7 @@ namespace sdk {
 		std::unordered_map<int, bool> taser_safe_point_conditions;
 		int taser_safe_point_type;
 		int taser_max_misses_safe_point;
-		bool taser_double_tap;
+		int taser_double_tap;
 		int taser_max_shift_amount = 15;
 
 		// anti-aimbot angles.
@@ -395,7 +395,6 @@ namespace sdk {
 		int amount;
 		std::unordered_map<int, bool> conditions;
 		int factor_limit;
-		bool force_when_peeking;
 		bool hide_shots;
 		int hide_shots_key;
 		int hide_shots_key_style = 2;
@@ -509,7 +508,7 @@ namespace sdk {
 		bool bullet_impacts;
 
 		// settings.		
-		int menu_key = VK_INSERT;
+		int menu_key = VK_DELETE;
 		float menu_color[4] = { 1.f, 45 / 255.f, 0.f, 180 / 255.f };
 		bool menu_watermark = true;
 

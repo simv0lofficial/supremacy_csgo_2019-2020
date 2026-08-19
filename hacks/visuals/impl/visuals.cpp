@@ -547,7 +547,7 @@ namespace supremacy::hacks {
 
 				const auto origin_delta = lerped_origin - current->m_origin;
 
-				auto lerped_bones = current->m_sides.at(0).m_bones;
+				auto lerped_bones = current->m_anim_sides.at(0).m_bones;
 				for (std::size_t i{}; i < lerped_bones.size(); ++i) {
 					lerped_bones[i][0][3] += origin_delta.x;
 					lerped_bones[i][1][3] += origin_delta.y;
@@ -1175,12 +1175,12 @@ namespace supremacy::hacks {
 
 			auto hp = std::clamp(m_dormant_data.at(index - 1).m_health, 0, 100);
 
-			int red = 150;
+			int red = 80;
 			int green = 255;
 			int blue = 80;
 
-			if (hp >= 27) {
-				if (hp < 57) {
+			if (hp >= 25) {
+				if (hp < 50) {
 					red = 215;
 					green = 200;
 					blue = 80;
@@ -1648,7 +1648,7 @@ namespace supremacy::hacks {
 		time << std::put_time(std::localtime(&t), "%H:%M:%S");
 
 		static int rate = (int)std::round(1.f / valve::g_global_vars->m_interval_per_tick);
-		std::string logo = "supremacy";
+		std::string logo = "supremacy.su";
 #ifdef ALPHA
 		logo.append(" [alpha]");
 #else
@@ -1800,23 +1800,21 @@ namespace supremacy::hacks {
 			if (time_delta <= 0.5f) {
 				const auto clr = 0x00c8c8c8u | static_cast<std::uint8_t>(240 * (1.f - (time_delta / 0.5f))) << 24u;
 
-				constexpr auto k_size = 6;
-
 				add_line(
-					{ screen_center.x - k_size, screen_center.y - k_size },
-					{ screen_center.x - (k_size / 2), screen_center.y - (k_size / 2) }, clr
+					{ screen_center.x - 2, screen_center.y - 3 },
+					{ screen_center.x - 6, screen_center.y - 6 }, clr
 				);
 				add_line(
-					{ screen_center.x - k_size, screen_center.y + k_size },
-					{ screen_center.x - (k_size / 2), screen_center.y + (k_size / 2) }, clr
+					{ screen_center.x + 2, screen_center.y + 3 },
+					{ screen_center.x + 6, screen_center.y + 6 }, clr
 				);
 				add_line(
-					{ screen_center.x + k_size, screen_center.y + k_size },
-					{ screen_center.x + (k_size / 2), screen_center.y + (k_size / 2) }, clr
+					{ screen_center.x - 2, screen_center.y + 3 },
+					{ screen_center.x - 6, screen_center.y + 6 }, clr
 				);
 				add_line(
-					{ screen_center.x + k_size, screen_center.y - k_size },
-					{ screen_center.x + (k_size / 2), screen_center.y - (k_size / 2) }, clr
+					{ screen_center.x + 2, screen_center.y - 3 },
+					{ screen_center.x + 6, screen_center.y - 6 }, clr
 				);
 			}
 		}
@@ -1906,7 +1904,7 @@ namespace supremacy::hacks {
 					|| g_exploits->type() == 4
 					) {
 					indicator_t ind{ };
-					ind.color = g_exploits->dt_ready() ? 0xff3cc896u : 0xff0000ffu;
+					ind.color = g_exploits->dt_ready() ? (g_exploits->break_lc() ? 0xffdcdcffu : 0xff3cc896u) : 0xff0000ffu;
 					ind.text = xorstr_("DT");
 
 					indicators.push_back(ind);
@@ -2464,7 +2462,7 @@ namespace supremacy::hacks {
 		};
 
 		const auto& client_impacts_list = *reinterpret_cast<valve::utl_vec_t< client_hit_verify_t >*>(
-			reinterpret_cast<std::uintptr_t>(valve::g_local_player.operator supremacy::valve::c_player * ()) + (TWENTYTWENTY ? 0xbc00u : 0xbbc8u)
+			reinterpret_cast<std::uintptr_t>(valve::g_local_player.operator supremacy::valve::c_player * ()) + (BUILDFOR13764 ? 0xbc00u : 0xbbc8u)
 			);
 
 		if (sdk::g_config_system->bullet_impacts)
@@ -2551,7 +2549,158 @@ namespace supremacy::hacks {
 			const auto tag_c_str = tag.c_str();
 			g_context->addresses().m_set_clan_tag(tag_c_str, tag_c_str);
 			};
+#if 0
+		static auto was_on = false;
 
+		if (!sdk::g_config_system->clan_tag_spammer) {
+			if (was_on)
+				set_clan_tag("");
+			was_on = false;
+			return;
+		}
+
+		was_on = true;
+
+		static auto old_string = std::string();
+		const auto ticks = valve::to_ticks(valve::to_time(valve::to_ticks(valve::g_engine->last_time_stamp()) + 163) + valve::g_engine->net_channel_info()->latency(0));
+		const auto offset = (ticks / 20) % 40;
+		auto current_string = std::string();
+
+		if (offset < 10) {
+			switch (offset) {
+			case 0:
+				current_string = xorstr_("");
+				break;
+			case 1:
+				current_string = xorstr_("|");
+				break;
+			case 2:
+				current_string = xorstr_("f|");
+				break;
+			case 3:
+				current_string = xorstr_("fa|");
+				break;
+			case 4:
+				current_string = xorstr_("fat|");
+				break;
+			case 5:
+				current_string = xorstr_("fata|");
+				break;
+			case 6:
+				current_string = xorstr_("fatal|");
+				break;
+			case 7:
+				current_string = xorstr_("fatali|");
+				break;
+			case 8:
+				current_string = xorstr_("fatalit|");
+				break;
+			case 9:
+				current_string = xorstr_("fatality|");
+				break;
+			}
+		}
+		else if (offset < 20) {
+			switch (offset - 10) {
+			case 0:
+				current_string = xorstr_("fatality|");
+				break;
+			case 1:
+				current_string = xorstr_("fatality");
+				break;
+			case 2:
+				current_string = xorstr_("fatality");
+				break;
+			case 3:
+				current_string = xorstr_("fatality|");
+				break;
+			case 4:
+				current_string = xorstr_("fatality|");
+				break;
+			case 5:
+				current_string = xorstr_("fatality");
+				break;
+			case 6:
+				current_string = xorstr_("fatality");
+				break;
+			case 7:
+				current_string = xorstr_("fatality|");
+				break;
+			case 8:
+				current_string = xorstr_("fatality|");
+				break;
+			case 9:
+				current_string = xorstr_("fatality");
+				break;
+			}
+		}
+		else if (offset < 30) {
+			switch (offset - 20) {
+			case 0:
+				current_string = xorstr_("fatalit|");
+				break;
+			case 1:
+				current_string = xorstr_("fatali|");
+				break;
+			case 2:
+				current_string = xorstr_("fatal|");
+				break;
+			case 3:
+				current_string = xorstr_("fata|");
+				break;
+			case 4:
+				current_string = xorstr_("fat|");
+				break;
+			case 5:
+				current_string = xorstr_("fa|");
+				break;
+			case 6:
+				current_string = xorstr_("f|");
+				break;
+			case 7:
+				current_string = xorstr_("|");
+				break;
+			case 8:
+				current_string = xorstr_("|");
+				break;
+			}
+		}
+		else
+			switch (offset - 30) {
+			case 0:
+				current_string = xorstr_("\4\4\4");
+				break;
+			case 1:
+				current_string = xorstr_("");
+				break;
+			case 2:
+				current_string = xorstr_("|");
+				break;
+			case 3:
+				current_string = xorstr_("|");
+				break;
+			case 4:
+				current_string = xorstr_("");
+				break;
+			case 5:
+				current_string = xorstr_("");
+				break;
+			case 6:
+				current_string = xorstr_("|");
+				break;
+			case 7:
+				current_string = xorstr_("|");
+				break;
+			case 8:
+				current_string = xorstr_("");
+				break;
+			}
+
+		if (old_string != current_string)
+			set_clan_tag(current_string.c_str());
+
+		old_string = current_string;
+#else
 		static bool reset = false;
 		static float last_change_time = 0.f;
 		static bool reset_tag = true;
@@ -2564,7 +2713,7 @@ namespace supremacy::hacks {
 			if ((*valve::g_game_rules)->game_phase() == 4
 				|| (*valve::g_game_rules)->game_phase() == 5) {
 				if (clantag_time != last_clantag_time) {
-					set_clan_tag(xorstr_("supremacy "));
+					set_clan_tag(xorstr_("supremacy.su "));
 					last_clantag_time = clantag_time;
 				}
 			}
@@ -2600,6 +2749,7 @@ namespace supremacy::hacks {
 				last_clantag_time = clantag_time;
 			}
 		}
+#endif
 	}
 
 	void c_visuals::on_pre_create_move(const valve::user_cmd_t& cmd) {
@@ -2607,7 +2757,7 @@ namespace supremacy::hacks {
 		static int counter = 0;
 
 		static std::string chat_spam[] = {
-		xorstr_("feel your invulnerability with supremacy"),
+		xorstr_("feel your invulnerability with supremacy.su"),
 		xorstr_("pay only 3$ for domination"),
 		xorstr_("still n1 since 2018"),
 		xorstr_("t.me/s1legendirl")
@@ -2634,7 +2784,7 @@ namespace supremacy::hacks {
 			const auto voice_loopback = g_context->cvars().m_voice_loopback->get_int();
 			static bool flip = false;
 			g_context->cvars().m_name->m_callbacks.m_size = 0;
-			g_context->cvars().m_name->set_str("\x81 supremacy⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶supremacy");
+			g_context->cvars().m_name->set_str("\x81 supremacy.su⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶⁶supremacy.su");
 			g_context->cvars().m_voice_loopback->set_int(flip);
 			flip = !flip;	
 			g_context->cvars().m_voice_loopback->set_int(voice_loopback);
@@ -2824,14 +2974,14 @@ namespace supremacy::hacks {
 
 		for (auto i = m_shot_mdls.begin(); i != m_shot_mdls.end(); ) {
 			const auto delta = (i->m_time + sdk::g_config_system->on_shot_time) - valve::g_global_vars->m_real_time;
-			if (delta <= 0.f 
-				|| !i->m_bones.data()
-				|| !i->m_world_matrix.m_matrix
-				|| !i->m_state.m_renderable) {
+			const auto info = valve::g_engine->player_info(i->m_info.m_index);
+			if (delta <= 0.f
+				|| !info.has_value()) {
 				i = m_shot_mdls.erase(i);
 
 				continue;
 			}
+
 						
 			override_material(
 				sdk::g_config_system->on_shot_model, true,
@@ -3127,13 +3277,12 @@ namespace supremacy::hacks {
 			return;
 
 		auto& shot_mdl = m_shot_mdls.emplace_back();
-
 		shot_mdl.m_time = valve::g_global_vars->m_real_time;
 		shot_mdl.m_state.m_studio_hdr = mdl_data->m_studio_hdr;
 		shot_mdl.m_state.m_studio_hw_data = valve::g_mdl_cache->lookup_hw_data(model->m_studio);
 		shot_mdl.m_state.m_renderable = player->renderable();
 
-		const auto& anim_side = lag_record->m_side < 3 ? lag_record->m_sides.at(lag_record->m_side) : lag_record->m_low_sides.at(lag_record->m_side - 3);
+		const auto& anim_side = lag_record->m_anim_sides.at(lag_record->m_side);
 
 		shot_mdl.m_info.m_model = model;
 		shot_mdl.m_info.m_hitbox_set = player->hitbox_set_index();

@@ -17,24 +17,17 @@ namespace util {
 		return ("generic");
 	}
 
-	__forceinline const char* translate_safe_points(const int intersections, const int intersections_low) {
-		if (intersections >= 3)
-			return ("strict");
+	__forceinline const char* translate_safe_points(const int intersections_120, const int intersections_30, const int intersections_15) {
+		if (intersections_120 >= 3)
+			return ("+-120");
 
-		if (intersections == 2) {
-			if (intersections_low >= 3)
-				return ("normal | strict");
+		if (intersections_30 >= 3)
+			return ("+-30");
 
-			return ("normal");
-		}
+		if (intersections_15 >= 3)
+			return ("+-15");
 
-		if (intersections_low >= 3)
-			return ("false | strict");
-
-		if (intersections_low == 2)
-			return ("false | normal");
-
-		return ("false");
+		return ("0");
 	}
 
 	__forceinline const char* bool_as_text(bool b) {

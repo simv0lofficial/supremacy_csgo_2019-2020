@@ -711,7 +711,6 @@ HANDLE CLoad::LoadFromFile(LPCSTR filename)
 
 HANDLE CLoad::LoadFromResources(int IDD_RESOUCE)
 {
-	/*
 	HGLOBAL hResData;
 	HRSRC   hResInfo;
 	void    *pvRes;
@@ -727,7 +726,6 @@ HANDLE CLoad::LoadFromResources(int IDD_RESOUCE)
 		memcpy( lpMemory, pvRes, dwSize );
 		return lpMemory;
 	}
-	*/
 
 	return nullptr;
 }

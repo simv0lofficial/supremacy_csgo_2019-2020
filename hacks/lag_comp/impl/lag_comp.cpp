@@ -19,7 +19,7 @@ namespace supremacy::hacks {
 			}
 
 			if (entry.m_player != player)
-				entry.reset();			
+				entry.reset();
 
 			entry.m_player = player;
 
@@ -32,7 +32,6 @@ namespace supremacy::hacks {
 
 			if (player->dormant()) {
 				entry.m_try_lby_resolver = true;
-				entry.m_try_trace_resolver = true;
 				entry.m_try_anim_resolver = true;
 				entry.m_misses = entry.m_trace_side = 0;
 				entry.m_left_dormancy = true;
@@ -68,22 +67,30 @@ namespace supremacy::hacks {
 			}
 
 			if (player->sim_time() == player->old_sim_time())
-				continue;	
-
-			const auto& cur_alive_loop_cycle = player->anim_layers().at(11).m_cycle;
-			if (cur_alive_loop_cycle == entry.m_alive_loop_cycle) {
-				player->sim_time() = player->old_sim_time();
 				continue;
+
+			auto equals = true;
+			const auto anim_layers = player->anim_layers();
+			for (auto i = 0u; i < anim_layers.size(); i++)
+			{
+				if (anim_layers.at(i) != entry.m_anim_layers[i])
+				{
+					equals = false;
+					break;
+				}
 			}
 
-			entry.m_alive_loop_cycle = cur_alive_loop_cycle;
+			if (equals)
+				continue;
+
+			entry.m_anim_layers = anim_layers;		
 			entry.m_receive_time = valve::g_global_vars->m_real_time;
 			entry.m_render_origin = player->origin();
 
 			if (entry.m_spawn_time != player->spawn_time()) {
 				anim_state->reset();
 
-				entry.m_try_lby_resolver = entry.m_try_trace_resolver = entry.m_try_anim_resolver = true;
+				entry.m_try_lby_resolver = entry.m_try_anim_resolver = true;
 				entry.m_misses = entry.m_prev_side = entry.m_trace_side = 0;
 
 				entry.m_lag_records.clear();
@@ -96,6 +103,7 @@ namespace supremacy::hacks {
 
 			if (!entry.m_lag_records.empty()) {
 				previous = entry.m_lag_records.back().get();
+
 				if (entry.m_lag_records.size() > 1)
 					penultimate = entry.m_lag_records.at(entry.m_lag_records.size() - 2).get();
 			}

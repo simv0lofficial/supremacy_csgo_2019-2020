@@ -248,49 +248,37 @@ namespace supremacy::hacks {
 		if (!sdk::g_config_system->air_strafe
 			|| valve::g_local_player->flags() & valve::e_ent_flags::on_ground)
 			return;
+				
+		auto wish_angles = user_cmd.m_view_angles;
 
+		if ((user_cmd.m_move.x != 0.f || user_cmd.m_move.y != 0.f))
+			wish_angles.y = std::remainder(
+				wish_angles.y
+				+ std::remainder(
+					math::to_deg(
+						std::atan2(user_cmd.m_move.x, user_cmd.m_move.y)
+					) - 90.f, 360.f
+				), 360.f
+			);
+
+		user_cmd.m_move.x = user_cmd.m_move.y = 0.f;
+				
+		const bool holding_w = user_cmd.m_buttons & valve::e_buttons::in_forward;
+		const bool holding_a = user_cmd.m_buttons & valve::e_buttons::in_move_left;
+		const bool holding_s = user_cmd.m_buttons & valve::e_buttons::in_back;
+		const bool holding_d = user_cmd.m_buttons & valve::e_buttons::in_move_right;
 		const auto& velocity = valve::g_local_player->velocity();
 		const auto speed_2d = velocity.length_2d();
 
-		float wish_dir{};
-		bool holding_w = user_cmd.m_buttons & valve::e_buttons::in_forward;
-		bool holding_a = user_cmd.m_buttons & valve::e_buttons::in_move_left;
-		bool holding_s = user_cmd.m_buttons & valve::e_buttons::in_back;
-		bool holding_d = user_cmd.m_buttons & valve::e_buttons::in_move_right;
-
-		if (holding_w) {
-			if (holding_a)
-				wish_dir += 45.f;
-			else if (holding_d)
-				wish_dir -= 45.f;
-		}
-		else if (holding_s) {
-			if (holding_a)
-				wish_dir += 135.f;
-			else if (holding_d)
-				wish_dir -= 135.f;
-			else
-				wish_dir += 180.f;
-		}
-		else if (holding_a)
-			wish_dir += 90.f;
-		else if (holding_d)
-			wish_dir -= 90.f;
-
-		if (wish_dir == 0.f
+		if (!(holding_w || holding_a || holding_s || holding_d)
 			&& speed_2d < 30.f)
 			return;
 
 		const auto ideal_strafe = std::min(90.f, math::to_deg(std::asin(15.f / speed_2d)));
 
-		auto wish_angles = user_cmd.m_view_angles;
+		const auto mult = m_strafe_switch ? 1.f : -1.f;
 
-		wish_angles.y = std::remainder(wish_angles.y + wish_dir, 360.f);
-
-		user_cmd.m_move.x = 0.f;
-		
 		m_strafe_switch = !m_strafe_switch;
-		const auto switch_value = m_strafe_switch ? 1.f : -1.f;
 
 		auto delta = std::remainder(wish_angles.y - m_prev_view_yaw, 360.f);
 		if (delta)
@@ -298,24 +286,26 @@ namespace supremacy::hacks {
 
 		delta = std::abs(delta);
 
-		if (delta <= ideal_strafe
-			|| delta >= 30.f) {
+		if (delta >= 30.f
+			|| ideal_strafe >= delta) {
 			const auto vel_angle = math::to_deg(std::atan2(velocity.y, velocity.x));
 			const auto vel_delta = std::remainder(wish_angles.y - vel_angle, 360.f);
 
-			if (vel_delta <= ideal_strafe || speed_2d <= 15.f) {
-				if (-ideal_strafe <= vel_delta || speed_2d <= 15.f) {
-					wish_angles.y += (ideal_strafe * switch_value);
-					user_cmd.m_move.y = 450.f * switch_value;
+			if (speed_2d <= 15.f
+				|| ideal_strafe >= vel_delta) {
+				if (speed_2d <= 15.f
+					|| vel_delta >= -ideal_strafe) {
+					user_cmd.m_move.y = 450.f * mult;
+					wish_angles.y += ideal_strafe * mult;
 				}
 				else {
-					wish_angles.y = vel_angle - ideal_strafe;
 					user_cmd.m_move.y = 450.f;
+					wish_angles.y = vel_angle - ideal_strafe;
 				}
 			}
 			else {
-				wish_angles.y = vel_angle + ideal_strafe;
 				user_cmd.m_move.y = -450.f;
+				wish_angles.y = vel_angle + ideal_strafe;
 			}
 
 			rotate(
@@ -376,7 +366,7 @@ namespace supremacy::hacks {
 
 		const auto max_weapon_speed = weapon->max_speed();
 
-		auto finalwishspeed = std::min(max_weapon_speed, 260.f);
+		auto finalwishspeed = std::min(max_weapon_speed, 250.f);
 
 		const auto ducking =
 			user_cmd.m_buttons & valve::e_buttons::in_duck
@@ -394,7 +384,7 @@ namespace supremacy::hacks {
 
 			if (!ducking
 				|| slow_down_to_fast_nigga)
-				finalwishspeed *= std::min(1.f, max_weapon_speed / 260.f);
+				finalwishspeed *= std::min(1.f, max_weapon_speed / 250.f);
 		}
 
 		if (ducking
@@ -447,7 +437,7 @@ namespace supremacy::hacks {
 			|| !(valve::g_local_player->flags() & valve::e_ent_flags::on_ground))
 			return false;
 
-		m_max_weapon_speed = 260.f;
+		m_max_weapon_speed = 250.f;
 		if (const auto weapon = g_context->weapon())
 			m_max_weapon_speed = weapon->max_speed();
 
@@ -663,7 +653,7 @@ namespace supremacy::hacks {
 			return;
 
 		m_max_player_speed = valve::g_local_player->max_speed();
-		m_max_weapon_speed = g_context->weapon() ? g_context->weapon()->max_speed() : 260.f;
+		m_max_weapon_speed = g_context->weapon() ? g_context->weapon()->max_speed() : 250.f;
 
 		m_velocity = valve::g_local_player->velocity();
 

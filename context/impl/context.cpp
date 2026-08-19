@@ -129,6 +129,12 @@ namespace supremacy {
 	}
 
 	void c_context::init() {
+#ifndef ALPHA
+#ifndef _DEBUG
+		if (g_guard->is_loader_run())
+			g_guard->loader_run = true;
+#endif
+#endif
 		if (is_debug_build())
 			debug_build = true;
 
@@ -143,7 +149,7 @@ namespace supremacy {
 			);
 
 		thread_pool = new c_thread_pool;
-		const auto client_module = (TWENTYTWENTY ? GetModuleHandle(xorstr_("client.dll")) : GetModuleHandle(xorstr_("client_panorama.dll")));
+		const auto client_module = ((BUILDFOR13764 || BUILDFOR13881) ? GetModuleHandle(xorstr_("client.dll")) : GetModuleHandle(xorstr_("client_panorama.dll")));
 		const auto engine_module = GetModuleHandle(xorstr_("engine.dll"));
 		const auto tier0_module = GetModuleHandle(xorstr_("tier0.dll"));
 		const auto materialsystem_module = GetModuleHandle(xorstr_("materialsystem.dll"));
@@ -167,7 +173,7 @@ namespace supremacy {
 			valve::g_client = util::get_interface<valve::c_client>(client_module, xorstr_("VClient018"));
 
 			valve::g_global_vars = **reinterpret_cast<valve::global_vars_t***>(
-				(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[0u] + (TWENTYTWENTY ? 0x1fu : 0x1bu)
+				(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[0u] + ((BUILDFOR13764 || BUILDFOR13881) ? 0x1fu : 0x1bu)
 				);
 
 			valve::g_engine = util::get_interface<valve::c_engine>(engine_module, xorstr_("VEngineClient014"));
@@ -380,8 +386,7 @@ namespace supremacy {
 			m_addresses.m_crosshair_ret = find_byte_seq(client_code_section, xorstr_("85 C0 0F 84 ? ? ? ? E8 ? ? ? ? 99"));
 			m_addresses.m_ret_to_scope_clear = find_byte_seq(client_code_section, xorstr_("0F 82 ? ? ? ? FF 50 3C")) + 0x9u;
 			m_addresses.m_ret_to_scope_blurry = find_byte_seq(client_code_section, xorstr_("FF B7 ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B 4C 24 24")) - 0x6u;
-			m_addresses.m_ret_to_fire_bullet = find_byte_seq(client_code_section, xorstr_("8B 0D ? ? ? ? F3 0F 7E 00 8B 40 08 89 45 E4"));
-			m_addresses.m_ret_set_first_person_viewangles = find_byte_seq(client_code_section, xorstr_("8B 5D 0C 8B 08 89 0B 8B 48 04 89 4B 04 B9"));
+			m_addresses.m_ret_to_eye_pos_and_vectors = find_byte_seq(client_code_section, xorstr_("8B 55 0C 8B C8 E8 ? ? ? ? 83 C4 08 5E 8B E5"));
 			m_addresses.m_allow_extrapolation = find_byte_seq(client_code_section, xorstr_("A2 ? ? ? ? 8B 45 E8"));
 			m_addresses.m_item_system = find_byte_seq(client_code_section, xorstr_("A1 ? ? ? ? 85 C0 75 ? A1 ? ? ? ? 56 68 E8 07 00 00"));
 			m_addresses.m_hud = *reinterpret_cast<std::uintptr_t*>(
@@ -397,6 +402,8 @@ namespace supremacy {
 			m_addresses.m_get_sequence_linear_motion = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14"));
 			m_addresses.m_invalidate_physics_recursive = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3"));
 			m_addresses.m_thread_id_allocated = find_byte_seq(tier0_code_section, xorstr_("C6 86 ? ? ? ? ? 83 05 ? ? ? ? ? 5E 75 04 33 C0 87 07")) + 0x2u;
+			m_addresses.m_choke_limit = find_byte_seq(engine_code_section, xorstr_("B8 ? ? ? ? 3B F0 0F 4F F0 89 5D FC")) + 0x1u;
+			m_addresses.m_ret_to_extrapolation = find_byte_seq(client_code_section, xorstr_("0F B6 0D ? ? ? ? 84 C0 0F 44 CF 88 0D ? ? ? ?"));
 		}
 
 		of_log << "initializing cvars...\n"; {
@@ -580,7 +587,7 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_accumulate_layers)
 			) != MH_OK)
 				return;
-#if 0
+
 			if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F0 B8 F8 10"))
@@ -589,7 +596,7 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_standard_blending_rules)
 			) != MH_OK)
 				return;
-#endif
+
 			if (MH_CreateHook(
 				(*reinterpret_cast<LPVOID**>((valve::client_state_t*)(uint32_t(valve::g_client_state) + 0x8)))[5u],
 				reinterpret_cast<LPVOID>(&hooks::packet_start),
@@ -603,14 +610,7 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_packet_end)
 			) != MH_OK)
 				return;
-#if 0
-			if (MH_CreateHook(
-				(*reinterpret_cast<LPVOID**>(valve::g_prediction))[19u],
-				reinterpret_cast<LPVOID>(&hooks::run_command),
-				reinterpret_cast<LPVOID*>(&hooks::orig_run_command)
-			) != MH_OK)
-				return;
-#endif
+
 			if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(
@@ -685,7 +685,7 @@ namespace supremacy {
 			) != MH_OK)
 				return;
 
-			if (TWENTYTWENTY) {
+			if (BUILDFOR13764) {
 				if (MH_CreateHook(
 					reinterpret_cast<LPVOID>(
 						find_byte_seq(
@@ -816,7 +816,7 @@ namespace supremacy {
 			) != MH_OK)
 				return;
 
-			if (TWENTYTWENTY) {
+			if (BUILDFOR13764) {
 				if (MH_CreateHook(
 					reinterpret_cast<LPVOID>(
 						find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 14 53 56 57 FF 75 18"))
@@ -841,6 +841,13 @@ namespace supremacy {
 					),
 				reinterpret_cast<LPVOID>(&hooks::get_eye_angles),
 				reinterpret_cast<LPVOID*>(&hooks::orig_get_eye_angles)
+			) != MH_OK)
+				return;
+
+			if (MH_CreateHook(
+				(*reinterpret_cast<LPVOID**>(valve::g_engine))[90u],
+				reinterpret_cast<LPVOID>(&hooks::is_paused),
+				reinterpret_cast<LPVOID*>(&hooks::orig_is_paused)
 			) != MH_OK)
 				return;
 
@@ -872,6 +879,8 @@ namespace supremacy {
 		of_log << "done!\n";
 		of_log.close();
 
+		valve::g_cvar->find_var(xorstr_("fps_max"))->set_int(0);
+		valve::g_cvar->find_var(xorstr_("fps_max_menu"))->set_int(0);
 		valve::g_cvar->find_var(xorstr_("developer"))->set_int(1);
 		valve::g_cvar->find_var(xorstr_("con_enable"))->set_int(2);
 		valve::g_cvar->find_var(xorstr_("con_filter_enable"))->set_int(1);
@@ -911,7 +920,7 @@ namespace supremacy {
 			&& anim_data.m_shot_cmd_number > valve::g_client_state->m_last_cmd_out
 			&& anim_data.m_shot_cmd_number < (valve::g_client_state->m_last_cmd_out + 100))
 			return false;
-
+#ifdef ALPHA
 		if (!weapon
 			|| m_freeze_time
 			|| !valve::g_local_player
@@ -920,6 +929,26 @@ namespace supremacy {
 			|| !valve::g_local_player->alive())
 			return false;
 
+#else
+#ifdef _DEBUG
+		if (!weapon
+			|| m_freeze_time
+			|| !valve::g_local_player
+			|| user_cmd.m_weapon_select
+			|| valve::g_local_player->flags() & valve::e_ent_flags::frozen
+			|| !valve::g_local_player->alive())
+			return false;
+#else
+		if (!weapon
+			|| m_freeze_time
+			|| !valve::g_local_player
+			|| user_cmd.m_weapon_select
+			|| valve::g_local_player->flags() & valve::e_ent_flags::frozen
+			|| !valve::g_local_player->alive()
+			|| (!m_net_info.m_on_local_server && !g_guard->serial_valid))
+			return false;
+#endif
+#endif
 		const auto wpn_data = weapon->wpn_data();
 		if (!wpn_data)
 			return false;

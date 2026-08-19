@@ -1,6 +1,10 @@
 #pragma once
 
-#define TWENTYTWENTY TRUE
+#define BUILDFOR13764 TRUE
+#define BUILDFOR13881 FALSE
+#define SKIPFAKEPLAYERCHECKS FALSE
+#define ANIMATIONLOGS TRUE
+
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #define _HAS_EXCEPTIONS 0
@@ -80,8 +84,10 @@ IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPAR
 
 #include "math/math.hpp"
 #include "util/util.hpp"
+//#include "ray_tracer/ray_tracer.hpp"
 #include "dependencies/config_system/config_system.hpp"
 #include "context/context.hpp"
+#include "dependencies/guard/guard.hpp"
 #include "valve/valve.hpp"
 #include "hacks/hacks.hpp"
 

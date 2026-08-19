@@ -182,7 +182,7 @@ namespace supremacy::hacks {
 
 			if (sdk::g_config_system->automatic_side_selection) {
 				const auto diff = math::angle_diff(yaw, best->m_yaw);
-				m_auto_dir_side = (sdk::g_config_system->automatic_side_selection == 1 ? diff >= 0.f : diff < 0.f);
+				m_auto_dir_side = (sdk::g_config_system->automatic_side_selection == 1 ? diff < 0.f : diff >= 0.f);
 
 				if (std::abs(sdk::g_config_system->yaw) > 90.f)
 					m_auto_dir_side = -m_auto_dir_side;
@@ -273,10 +273,6 @@ namespace supremacy::hacks {
 			&& !(valve::g_local_player->flags() & valve::e_ent_flags::on_ground))
 			should_choke = true;
 
-		if (!should_choke			
-			&& g_aim_bot->is_peeking())
-			should_choke = true;
-
 		if (should_choke
 			&& m_choke_start_cmd_number != valve::g_client_state->m_last_cmd_out)
 			m_choke_start_cmd_number = valve::g_client_state->m_last_cmd_out;
@@ -341,8 +337,7 @@ namespace supremacy::hacks {
 			break;
 		}
 
-		if (valve::g_client_state->m_choked_cmds >= sdk::g_config_system->factor_limit
-			&& !(sdk::g_config_system->force_when_peeking && g_aim_bot->is_peeking()))
+		if (valve::g_client_state->m_choked_cmds >= sdk::g_config_system->factor_limit)
 			g_context->flags() &= ~e_context_flags::choke;
 	}
 

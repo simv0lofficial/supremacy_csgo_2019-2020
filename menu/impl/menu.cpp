@@ -458,9 +458,9 @@ namespace supremacy {
 						if (sdk::g_config_system->pistols_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->pistols_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->pistols_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->pistols_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->pistols_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->pistols_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 1) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->heavy_pistols_remove_recoil);
@@ -503,9 +503,9 @@ namespace supremacy {
 						if (sdk::g_config_system->heavy_pistols_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->heavy_pistols_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->heavy_pistols_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->heavy_pistols_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->heavy_pistols_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->heavy_pistols_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 2) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->sub_machine_guns_remove_recoil);
@@ -548,9 +548,9 @@ namespace supremacy {
 						if (sdk::g_config_system->sub_machine_guns_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->sub_machine_guns_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->sub_machine_guns_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->sub_machine_guns_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->sub_machine_guns_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->sub_machine_guns_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 3) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->rifles_remove_recoil);
@@ -593,9 +593,9 @@ namespace supremacy {
 						if (sdk::g_config_system->rifles_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->rifles_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->rifles_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->rifles_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->rifles_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->rifles_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 4) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->auto_snipers_remove_recoil);
@@ -638,9 +638,9 @@ namespace supremacy {
 						if (sdk::g_config_system->auto_snipers_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->auto_snipers_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->auto_snipers_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->auto_snipers_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->auto_snipers_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->auto_snipers_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 5) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->scout_remove_recoil);
@@ -683,9 +683,9 @@ namespace supremacy {
 						if (sdk::g_config_system->scout_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->scout_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->scout_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->scout_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->scout_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->scout_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 6) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->awp_remove_recoil);
@@ -728,9 +728,9 @@ namespace supremacy {
 						if (sdk::g_config_system->awp_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->awp_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->awp_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->awp_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->awp_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->awp_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 7) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->shotguns_remove_recoil);
@@ -773,9 +773,9 @@ namespace supremacy {
 						if (sdk::g_config_system->shotguns_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->shotguns_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->shotguns_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->shotguns_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->shotguns_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->shotguns_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 8) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->machine_guns_remove_recoil);
@@ -818,9 +818,9 @@ namespace supremacy {
 						if (sdk::g_config_system->machine_guns_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->machine_guns_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->machine_guns_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->machine_guns_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->machine_guns_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->machine_guns_max_shift_amount, 6, 14, "%d ticks");
 				}
 				else if (sdk::g_config_system->weapon_selection == 9) {
 					ui::Checkbox("remove recoil", &sdk::g_config_system->taser_remove_recoil);
@@ -863,9 +863,9 @@ namespace supremacy {
 						if (sdk::g_config_system->taser_safe_point_conditions[5])
 							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->taser_max_misses_safe_point, 1, 5, "%d miss");
 					}
-					ui::Checkbox("double tap", &sdk::g_config_system->taser_double_tap);
+					ui::SingleSelect("double tap", &sdk::g_config_system->taser_double_tap, { "off", "offensive", "defensive [beta]" });
 					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-					ui::SliderInt("max shift amount", &sdk::g_config_system->taser_max_shift_amount, 6, 15, "%d ticks");
+					ui::SliderInt("max shift amount", &sdk::g_config_system->taser_max_shift_amount, 6, 14, "%d ticks");
 				}
 			}
 			ui::EndChild();
@@ -911,7 +911,6 @@ namespace supremacy {
 				ui::SingleSelect("amount", &sdk::g_config_system->amount, { "dynamic", "maximal", "switch", "break lc" });
 				ui::MultiSelect("conditions", &sdk::g_config_system->conditions, { "always", "on move", "in air" });
 				ui::SliderInt("factor limit", &sdk::g_config_system->factor_limit, 0, 14, "%dticks");
-				ui::Checkbox("force fake lag when peeking", &sdk::g_config_system->force_when_peeking);
 				ui::Checkbox("hide shots", &sdk::g_config_system->hide_shots);
 				ui::Keybind("##hide_shots_key", &sdk::g_config_system->hide_shots_key, &sdk::g_config_system->hide_shots_key_style);
 			}
@@ -983,7 +982,7 @@ namespace supremacy {
 				if (sdk::g_config_system->local_player_fake)
 					ui::SingleSelect("##local_player_fake_model", &sdk::g_config_system->local_player_fake_model, { "regular", "solid", "glow", "metallic" });
 								
-				ui::Checkbox("on shot (random crashes)", &sdk::g_config_system->on_shot);
+				ui::Checkbox("on shot", &sdk::g_config_system->on_shot);
 				color_picker("##on_shot_color", sdk::g_config_system->on_shot_color);
 				if (sdk::g_config_system->on_shot) {
 					ui::SingleSelect("##on_shot_model", &sdk::g_config_system->on_shot_model, { "regular", "solid", "glow", "metallic" });

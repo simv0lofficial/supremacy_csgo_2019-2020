@@ -473,7 +473,7 @@ namespace supremacy::valve {
 	__forceinline float c_weapon::max_speed( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 441u : 438u) ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(BUILDFOR13764 ? 441u : 438u) ]( this );
 	}
 
 	__forceinline e_item_index& c_weapon::item_index( ) {
@@ -567,24 +567,24 @@ namespace supremacy::valve {
 	__forceinline float c_weapon::spread( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 452u : 449u) ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(BUILDFOR13764 ? 452u : 449u) ]( this );
 	}
 
 	__forceinline float c_weapon::inaccuracy( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 482u:479u )]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(BUILDFOR13764 ? 482u:479u )]( this );
 	}
 
 	__forceinline void c_weapon::update_inaccuracy( ) {
 		using fn_t = void( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 483u:480u) ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(BUILDFOR13764 ? 483u:480u) ]( this );
 	}
 
 	__forceinline weapon_data_t* c_weapon::wpn_data( ) {
 		using fn_t = weapon_data_t*( __thiscall* )(decltype(this));
-		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 460u:457u) ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(BUILDFOR13764 ? 460u:457u) ]( this );
 	}
 
 	__forceinline bool& c_weapon::in_reload( ) {
@@ -1013,7 +1013,7 @@ namespace supremacy::valve {
 
 	__forceinline cmd_context_t& c_player::cmd_context( ) {
 		return *reinterpret_cast< cmd_context_t* >(
-			reinterpret_cast< std::uintptr_t >( this ) + (TWENTYTWENTY ? 0x34fcu : 0x34f8u)
+			reinterpret_cast< std::uintptr_t >( this ) + (BUILDFOR13764 ? 0x34fcu : 0x34f8u)
 		);
 	}
 
@@ -1167,7 +1167,7 @@ namespace supremacy::valve {
 
 	__forceinline bool& c_player::use_new_anim_state( ) {
 		return *reinterpret_cast<bool*>(
-			reinterpret_cast<std::uintptr_t>(this) + (TWENTYTWENTY ? 0x3ac8u : 0x3ab4u)
+			reinterpret_cast<std::uintptr_t>(this) + (BUILDFOR13764 ? 0x3ac8u : 0x3ab4u)
 			);
 	}
 

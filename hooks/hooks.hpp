@@ -85,9 +85,6 @@ namespace supremacy::hooks {
 	void __fastcall packet_end( const std::uintptr_t ecx, const std::uintptr_t edx );
 	inline decltype( &packet_end ) orig_packet_end{};
 
-	void __fastcall run_command(const std::uintptr_t ecx, const std::uintptr_t edx, valve::c_player* const player, valve::user_cmd_t* user_cmd, valve::c_move_helper* move_helper);
-	inline decltype(&run_command) orig_run_command{};
-
 	void __fastcall physics_simulate( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &physics_simulate ) orig_physics_simulate{};
 
@@ -186,6 +183,9 @@ namespace supremacy::hooks {
 
 	qangle_t* __fastcall get_eye_angles( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &get_eye_angles ) orig_get_eye_angles{};
+
+	bool __fastcall is_paused(const std::uintptr_t ecx, const std::uintptr_t edx);
+	inline decltype(&is_paused) orig_is_paused{};
 
 	float __fastcall aspect_ratio(const std::uintptr_t ecx, const std::uintptr_t edx, int width, int height);
 	inline decltype(&aspect_ratio) orig_aspect_ratio{};

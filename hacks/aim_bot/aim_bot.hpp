@@ -35,8 +35,9 @@ namespace supremacy::hacks {
 		vec3_t		m_pos{};
 		pen_data_t	m_pen_data{};
 		bool		m_center{}, m_valid{};
-		int			m_intersections{},
-			m_low_intersections{},
+		int			m_intersections_120{},
+			m_intersections_30{},
+			m_intersections_15{},
 			m_hitbox{}, m_hitgroup{},
 			m_needed_intersections{};
 	};
@@ -74,7 +75,7 @@ namespace supremacy::hacks {
 	private:
 		std::size_t calc_points_count(const int hitgroups, const int multi_points) const;
 
-		void scan_point(const aim_target_t& target, aim_point_t& point, const bool ignore_dmg) const;
+		void scan_point(const aim_target_t& target, aim_point_t& point, const bool emulated, const bool ignore_dmg) const;
 
 		void scan_center_points(aim_target_t& target, const int hitgroups) const;
 
@@ -96,18 +97,16 @@ namespace supremacy::hacks {
 	public:
 		void scan_points(
 			aim_target_t& target, const int hitgroups, const int multi_points,
-			const bool trace, const bool ignore_dmg
+			const bool trace, const bool emulated, const bool ignore_dmg
 		) const;
-	private:
-		void player_move(extrapolation_data_t& data) const;
 	public:
 		bool select_points(aim_target_t& target) const;
 	private:
+		void player_move(extrapolation_data_t& data) const;
+
 		std::optional< aim_record_t > extrapolate(const player_entry_t& entry) const;
 
 		std::optional< aim_record_t > select_latest_record(const player_entry_t& entry) const;
-
-		std::optional<aim_record_t> select_oldest_record(const player_entry_t& entry) const;
 
 		std::optional< aim_record_t > select_record(const player_entry_t& entry) const;
 
@@ -149,7 +148,6 @@ namespace supremacy::hacks {
 			{ 7, 8, 9, 10 },
 			{ 11, 12 }
 		};
-		bool									m_is_peeking{};
 
 		aim_last_target_t						m_last_target{};
 	public:
@@ -157,11 +155,7 @@ namespace supremacy::hacks {
 
 		void on_create_move(valve::user_cmd_t& user_cmd);
 
-		bool peek_correction() const;
-
 		__forceinline const aim_last_target_t& last_target() const;
-
-		__forceinline const bool& is_peeking() const;
 	};
 
 	inline const auto g_aim_bot = std::make_unique< c_aim_bot >();

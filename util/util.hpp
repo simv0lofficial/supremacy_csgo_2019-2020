@@ -10,7 +10,7 @@ namespace util {
 
 	__forceinline const char* translate_hitgroup(const int index);
 
-	__forceinline const char* translate_safe_points(const int intersections, const int intersections_low);
+	__forceinline const char* translate_safe_points(const int intersections_120, const int intersections_30, const int intersections_15);
 
 	__forceinline const char* bool_as_text(bool b);
 

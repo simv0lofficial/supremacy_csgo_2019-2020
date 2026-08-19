@@ -38,18 +38,25 @@ namespace supremacy::hacks {
 		return ret;
 	}
 
-	void c_aim_bot::scan_point(const aim_target_t& target, aim_point_t& point, const bool ignore_dmg) const {
+	void c_aim_bot::scan_point(const aim_target_t& target, aim_point_t& point, const bool emulated, const bool ignore_dmg) const {
 		const auto view_angles = valve::g_engine->view_angles();
 		const auto& shoot_pos = g_context->shoot_pos();
 		const auto fov = math::calc_fov(view_angles, shoot_pos, point.m_pos);
-		if (fov > sdk::g_config_system->maximum_fov)
+		if (!emulated && fov > sdk::g_config_system->maximum_fov)
 			return;
 
 		const auto is_taser = g_context->weapon()->item_index() == valve::e_item_index::taser;
-		point.m_pen_data = g_auto_wall->fire_bullet(
-			valve::g_local_player, target.m_entry->m_player, g_context->wpn_data(),
-			is_taser, shoot_pos, point.m_pos
-		);
+		if (emulated) {
+			const auto predicted_shoot_pos = shoot_pos + valve::g_local_player->velocity() * valve::to_time(3);
+			point.m_pen_data = g_auto_wall->fire_emulated(
+				valve::g_local_player, target.m_entry->m_player, predicted_shoot_pos, point.m_pos
+			);
+		}
+		else
+			point.m_pen_data = g_auto_wall->fire_bullet(
+				valve::g_local_player, target.m_entry->m_player, g_context->wpn_data(),
+				is_taser, shoot_pos, point.m_pos
+			);
 
 		if (point.m_pen_data.m_dmg < 1)
 			return;
@@ -61,30 +68,26 @@ namespace supremacy::hacks {
 		const auto& pen = point.m_pen_data;
 		const auto hp = target.m_entry->m_player->health();
 
-		if (!ignore_dmg) {
-			auto min_dmg = pen.m_remaining_pen == 4 ? sdk::g_config_system->minimum_damage : sdk::g_config_system->penetration_minimum_damage;
+		auto min_dmg = pen.m_remaining_pen == 4 ? sdk::g_config_system->minimum_damage : sdk::g_config_system->penetration_minimum_damage;
 
-			if (key_handler::check_key(sdk::g_config_system->override_minimum_damage_key, sdk::g_config_system->override_minimum_damage_key_style))
-				min_dmg = sdk::g_config_system->override_minimum_damage;
+		if (key_handler::check_key(sdk::g_config_system->override_minimum_damage_key, sdk::g_config_system->override_minimum_damage_key_style))
+			min_dmg = sdk::g_config_system->override_minimum_damage;
 
-			min_dmg = std::min(min_dmg, hp + 5);
+		min_dmg = std::min(min_dmg, hp + 5);
 
-			if (is_taser)
-				min_dmg = hp + 5;
+		if (is_taser)
+			min_dmg = hp + 5;
 
-			if (pen.m_dmg < min_dmg)
-				return;
-		}
+		if (pen.m_dmg < min_dmg)
+			return;	
 
-		if (target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
-			point.m_intersections = 3;
+		if (!SKIPFAKEPLAYERCHECKS && target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
+			point.m_intersections_120 = 3;
 			point.m_valid = true;
 
 			return;
 		}
 
-		// todo: simv0l - use TraceToStudioCsgoHitgroupsPriority instead of this math-based shit
-		// like in fatality (https://github.com/BulletGG/fatality-source-code/blob/master/internal_hvh/features/wall_penetration.cpp#L536-L543)
 		const auto intersect = [](
 			const vec3_t& shoot_pos, const vec3_t& point,
 			const valve::studio_hitbox_t* const hitbox, const mat3x4_t& matrix
@@ -103,47 +106,99 @@ namespace supremacy::hacks {
 			return math::intersect_line_with_bb(min, max, hitbox->m_min, hitbox->m_max);
 		};
 
-		const auto& zero_bones = target.m_lag_record->m_sides.at(0).m_bones;
-		const auto& negative_bones = target.m_lag_record->m_sides.at(1).m_bones;
-		const auto& positive_bones = target.m_lag_record->m_sides.at(2).m_bones;
-		const auto& low_negative_bones = target.m_lag_record->m_low_sides.at(0).m_bones;
-		const auto& low_positive_bones = target.m_lag_record->m_low_sides.at(1).m_bones;
+		const auto& zero_bones = target.m_lag_record->m_anim_sides.at(0).m_bones;
+		const auto& negative_120_bones = target.m_lag_record->m_anim_sides.at(1).m_bones;
+		const auto& positive_120_bones = target.m_lag_record->m_anim_sides.at(2).m_bones;
+		const auto& negative_30_bones = target.m_lag_record->m_anim_sides.at(3).m_bones;
+		const auto& positive_40_bones = target.m_lag_record->m_anim_sides.at(4).m_bones;
+		const auto& negative_20_bones = target.m_lag_record->m_anim_sides.at(5).m_bones;
+		const auto& positive_20_bones = target.m_lag_record->m_anim_sides.at(6).m_bones;
 		const auto hitbox_set = target.m_entry->m_player->mdl_data()->m_studio_hdr->hitbox_set(target.m_entry->m_player->hitbox_set_index());
-		const auto hitbox = hitbox_set->hitbox(point.m_hitbox);
 
-		if (zero_bones[hitbox->m_bone].m_matrix[0][3] != negative_bones[hitbox->m_bone].m_matrix[0][3]
-			&& zero_bones[hitbox->m_bone].m_matrix[0][3] != positive_bones[hitbox->m_bone].m_matrix[0][3]
-			&& zero_bones[hitbox->m_bone].m_matrix[0][3] != low_negative_bones[hitbox->m_bone].m_matrix[0][3]
-			&& zero_bones[hitbox->m_bone].m_matrix[0][3] != low_positive_bones[hitbox->m_bone].m_matrix[0][3]
-			&& negative_bones[hitbox->m_bone].m_matrix[0][3] != low_negative_bones[hitbox->m_bone].m_matrix[0][3]
-			&& negative_bones[hitbox->m_bone].m_matrix[0][3] != low_positive_bones[hitbox->m_bone].m_matrix[0][3]
-			&& negative_bones[hitbox->m_bone].m_matrix[0][3] != positive_bones[hitbox->m_bone].m_matrix[0][3]
-			&& positive_bones[hitbox->m_bone].m_matrix[0][3] != low_negative_bones[hitbox->m_bone].m_matrix[0][3]
-			&& positive_bones[hitbox->m_bone].m_matrix[0][3] != low_positive_bones[hitbox->m_bone].m_matrix[0][3]
-			&& low_negative_bones[hitbox->m_bone].m_matrix[0][3] != low_positive_bones[hitbox->m_bone].m_matrix[0][3]) {
-			if (intersect(shoot_pos, point.m_pos, hitbox, zero_bones[hitbox->m_bone])) {
-				++point.m_intersections;
-				++point.m_low_intersections;
-			}
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, zero_bones[hitbox->m_bone]))
+				continue;
 
-			if (intersect(shoot_pos, point.m_pos, hitbox, negative_bones[hitbox->m_bone]))
-				++point.m_intersections;
+			++point.m_intersections_120;
+			++point.m_intersections_30;
+			++point.m_intersections_15;
 
-			if (intersect(shoot_pos, point.m_pos, hitbox, positive_bones[hitbox->m_bone]))
-				++point.m_intersections;
-
-			if (intersect(shoot_pos, point.m_pos, hitbox, low_negative_bones[hitbox->m_bone]))
-				++point.m_low_intersections;
-
-			if (intersect(shoot_pos, point.m_pos, hitbox, low_positive_bones[hitbox->m_bone]))
-				++point.m_low_intersections;
+			break;
 		}
 
-		point.m_valid = point.m_intersections >= point.m_needed_intersections;
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, negative_120_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_120;
+
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, positive_120_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_120;
+
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, negative_30_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_30;
+
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, positive_40_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_30;
+
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, negative_20_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_15;
+
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, positive_20_bones[hitbox->m_bone]))
+				continue;
+
+			++point.m_intersections_15;
+
+			break;
+		}
+
+		point.m_valid = point.m_intersections_120 >= point.m_needed_intersections;
 	}
 
 	void c_aim_bot::scan_center_points(aim_target_t& target, const int hitgroups) const {
-		const auto& anim_side = target.m_lag_record->m_side < 3 ? target.m_lag_record->m_sides.at(target.m_lag_record->m_side) : target.m_lag_record->m_low_sides.at(target.m_lag_record->m_side - 3);
+		const auto& anim_side = target.m_lag_record->m_anim_sides.at(target.m_lag_record->m_side);
 
 		const auto hitbox_set = target.m_entry->m_player->mdl_data()->m_studio_hdr->hitbox_set(target.m_entry->m_player->hitbox_set_index());
 		const auto is_taser = g_context->weapon()->item_index() == valve::e_item_index::taser;
@@ -176,7 +231,7 @@ namespace supremacy::hacks {
 		target.m_lag_record->restore(target.m_entry->m_player, target.m_lag_record->m_side);
 
 		for (auto& point : target.m_points)
-			scan_point(target, point, true);
+			scan_point(target, point, false, true);
 	}
 
 	void c_aim_bot::calc_capsule_points(
@@ -365,9 +420,9 @@ namespace supremacy::hacks {
 
 	void c_aim_bot::scan_points(
 		aim_target_t& target, const int hitgroups, const int multi_points,
-		const bool trace, const bool ignore_dmg
+		const bool trace, const bool emulated, const bool ignore_dmg
 	) const {
-		const auto& anim_side = target.m_lag_record->m_side < 3 ? target.m_lag_record->m_sides.at(target.m_lag_record->m_side) : target.m_lag_record->m_low_sides.at(target.m_lag_record->m_side - 3);
+		const auto& anim_side = target.m_lag_record->m_anim_sides.at(target.m_lag_record->m_side);
 
 		const auto hitbox_set = target.m_entry->m_player->mdl_data()->m_studio_hdr->hitbox_set(target.m_entry->m_player->hitbox_set_index());
 
@@ -384,7 +439,8 @@ namespace supremacy::hacks {
 			|| (sdk::g_config_system->safe_point_conditions[7] && target.m_lag_record->m_sideways);
 
 		for (std::size_t i{}; i < m_hitgroups.size(); ++i) {
-			if (!((1 << i) & hitgroups)
+			if (!emulated
+				&& !((1 << i) & hitgroups)
 				&& (i != 2 || !(sdk::g_config_system->body_aim_conditions[0]
 					|| sdk::g_config_system->body_aim_conditions[1]
 					|| sdk::g_config_system->body_aim_conditions[2]
@@ -427,18 +483,26 @@ namespace supremacy::hacks {
 				}
 			}
 
-			for (auto& point : target.m_points) {
-				if (is_taser) {
-					point.m_needed_intersections = 3;
+			if (!emulated){
+				for (auto& point : target.m_points) {
+					if (is_taser) {
+						point.m_needed_intersections = 3;
 
-					continue;
-				}
+						continue;
+					}
+										
+					if (force_safe_point
+						|| (sdk::g_config_system->safe_point_conditions[4] && point.m_hitbox > 6)) {
+						point.m_needed_intersections = sdk::g_config_system->safe_point_type + 2;
 
-				if (force_safe_point
-					|| (sdk::g_config_system->safe_point_conditions[4] && point.m_hitbox > 6)) {
-					point.m_needed_intersections = sdk::g_config_system->safe_point_type + 2;
+						continue;
+					}
 
-					continue;
+					if (target.m_lag_record->m_should_force_normal_sp) {
+						point.m_needed_intersections = 2;
+
+						continue;
+					}
 				}
 			}
 		}
@@ -451,7 +515,7 @@ namespace supremacy::hacks {
 		target.m_lag_record->restore(target.m_entry->m_player, target.m_lag_record->m_side);
 
 		for (auto& point : target.m_points)
-			scan_point(target, point, ignore_dmg);
+			scan_point(target, point, emulated, ignore_dmg);
 
 		lag_backup.restore(target.m_entry->m_player);
 	}
@@ -475,7 +539,6 @@ namespace supremacy::hacks {
 			}
 
 			const auto& pen_data = point.m_pen_data;
-
 			auto min_dmg = pen_data.m_remaining_pen == 4 ? sdk::g_config_system->minimum_damage : sdk::g_config_system->penetration_minimum_damage;
 
 			if (key_handler::check_key(sdk::g_config_system->override_minimum_damage_key, sdk::g_config_system->override_minimum_damage_key_style))
@@ -486,7 +549,32 @@ namespace supremacy::hacks {
 			if (is_taser)
 				min_dmg = hp + 5;
 
-			if (point.m_intersections == 3) {
+			if (point.m_intersections_120 == 3) {
+				if (point.m_center) {
+					if (pen_data.m_dmg > hp + 5) {
+						best_point = &point;
+						continue;
+					}
+
+					if (sdk::g_config_system->safe_point_conditions[0]
+						&& pen_data.m_dmg > min_dmg) {
+						best_point = &point;
+						continue;
+					}
+
+					if (sdk::g_config_system->safe_point_conditions[1]
+						&& pen_data.m_dmg > hp) {
+						best_point = &point;
+						continue;
+					}
+
+					if (sdk::g_config_system->safe_point_conditions[2]
+						&& pen_data.m_dmg > hp / 2) {
+						best_point = &point;
+						continue;
+					}
+				}
+
 				if (pen_data.m_dmg > hp + 5) {
 					best_point = &point;
 					continue;
@@ -515,59 +603,165 @@ namespace supremacy::hacks {
 				&& !target.m_lag_record->m_shot
 				&& !target.m_lag_record->m_throw
 				&& target.m_lag_record->m_side) {
-				if (target.m_lag_record->m_side < 3
-					&& point.m_low_intersections == 3) {
-					if (pen_data.m_dmg > hp + 5) {
-						best_point = &point;
-						continue;
+				if (target.m_lag_record->m_side < 3) {
+					if (point.m_intersections_30 == 3) {
+						if (pen_data.m_dmg > hp + 5) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[0]
+							&& pen_data.m_dmg > min_dmg) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[1]
+							&& pen_data.m_dmg > hp) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[2]
+							&& pen_data.m_dmg > hp / 2) {
+							best_point = &point;
+							continue;
+						}
 					}
 
-					if (sdk::g_config_system->safe_point_conditions[0]
-						&& pen_data.m_dmg > min_dmg) {
-						best_point = &point;
-						continue;
+					if (point.m_intersections_15 == 3) {
+						if (pen_data.m_dmg > hp + 5) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[0]
+							&& pen_data.m_dmg > min_dmg) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[1]
+							&& pen_data.m_dmg > hp) {
+							best_point = &point;
+							continue;
+						}
+
+						if (sdk::g_config_system->safe_point_conditions[2]
+							&& pen_data.m_dmg > hp / 2) {
+							best_point = &point;
+							continue;
+						}
+					}
+				}
+				else if (target.m_lag_record->m_side == 3
+					|| target.m_lag_record->m_side == 4) {
+					if (point.m_intersections_120 == 2) {
+						if (point.m_intersections_30 == 3) {
+							if (pen_data.m_dmg > hp + 5) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[0]
+								&& pen_data.m_dmg > min_dmg) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[1]
+								&& pen_data.m_dmg > hp) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[2]
+								&& pen_data.m_dmg > hp / 2) {
+								best_point = &point;
+								continue;
+							}
+						}
+
+						if (point.m_intersections_15 == 3) {
+							if (pen_data.m_dmg > hp + 5) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[0]
+								&& pen_data.m_dmg > min_dmg) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[1]
+								&& pen_data.m_dmg > hp) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[2]
+								&& pen_data.m_dmg > hp / 2) {
+								best_point = &point;
+								continue;
+							}
+						}
 					}
 
-					if (sdk::g_config_system->safe_point_conditions[1]
-						&& pen_data.m_dmg > hp) {
-						best_point = &point;
-						continue;
-					}
+					if (point.m_intersections_120 == 1) {
+						if (point.m_intersections_30 == 3) {
+							if (pen_data.m_dmg > hp + 5) {
+								best_point = &point;
+								continue;
+							}
 
-					if (sdk::g_config_system->safe_point_conditions[2]
-						&& pen_data.m_dmg > hp / 2) {
-						best_point = &point;
-						continue;
+							if (sdk::g_config_system->safe_point_conditions[0]
+								&& pen_data.m_dmg > min_dmg) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[1]
+								&& pen_data.m_dmg > hp) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[2]
+								&& pen_data.m_dmg > hp / 2) {
+								best_point = &point;
+								continue;
+							}
+						}
+
+						if (point.m_intersections_15 == 3) {
+							if (pen_data.m_dmg > hp + 5) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[0]
+								&& pen_data.m_dmg > min_dmg) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[1]
+								&& pen_data.m_dmg > hp) {
+								best_point = &point;
+								continue;
+							}
+
+							if (sdk::g_config_system->safe_point_conditions[2]
+								&& pen_data.m_dmg > hp / 2) {
+								best_point = &point;
+								continue;
+							}
+						}
 					}
 				}
 
-				if (point.m_intersections == 2) {
-					if (pen_data.m_dmg > hp + 5) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[0]
-						&& pen_data.m_dmg > min_dmg) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[1]
-						&& pen_data.m_dmg > hp) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[2]
-						&& pen_data.m_dmg > hp / 2) {
-						best_point = &point;
-						continue;
-					}
-				}
-
-				if (target.m_lag_record->m_side < 3
-					&& point.m_low_intersections == 1) {
+				if (point.m_intersections_30 == 3) {
 					if (pen_data.m_dmg > hp + 5) {
 						best_point = &point;
 						continue;
@@ -593,7 +787,7 @@ namespace supremacy::hacks {
 				}
 			}
 			else {
-				if (point.m_low_intersections == 3) {
+				if (point.m_intersections_30 == 3) {
 					if (pen_data.m_dmg > hp + 5) {
 						best_point = &point;
 						continue;
@@ -618,32 +812,7 @@ namespace supremacy::hacks {
 					}
 				}
 
-				if (point.m_intersections == 2) {
-					if (pen_data.m_dmg > hp + 5) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[0]
-						&& pen_data.m_dmg > min_dmg) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[1]
-						&& pen_data.m_dmg > hp) {
-						best_point = &point;
-						continue;
-					}
-
-					if (sdk::g_config_system->safe_point_conditions[2]
-						&& pen_data.m_dmg > hp / 2) {
-						best_point = &point;
-						continue;
-					}
-				}
-
-				if (point.m_low_intersections == 2) {
+				if (point.m_intersections_15 == 3) {
 					if (pen_data.m_dmg > hp + 5) {
 						best_point = &point;
 						continue;
@@ -670,7 +839,7 @@ namespace supremacy::hacks {
 			}
 
 			const auto& best_pen_data = best_point->m_pen_data;
-			if (point.m_intersections == best_point->m_intersections) {
+			if (point.m_intersections_120 == best_point->m_intersections_120) {
 				if (point.m_center) {
 					if ((best_pen_data.m_hitgroup == pen_data.m_hitgroup && best_pen_data.m_remaining_pen == pen_data.m_remaining_pen)
 						|| (best_pen_data.m_remaining_pen == pen_data.m_remaining_pen && std::abs(best_pen_data.m_dmg - pen_data.m_dmg) <= 1)
@@ -691,7 +860,8 @@ namespace supremacy::hacks {
 				|| best_pen_data.m_remaining_pen != pen_data.m_remaining_pen) {
 				if (best_pen_data.m_remaining_pen != pen_data.m_remaining_pen
 					|| std::abs(best_pen_data.m_dmg - pen_data.m_dmg) > 1) {
-					if (best_pen_data.m_dmg <= hp || pen_data.m_dmg <= hp) {
+					if (best_pen_data.m_dmg <= hp || pen_data.m_dmg <= hp)
+					{
 						if (pen_data.m_dmg > best_pen_data.m_dmg)
 							best_point = &point;
 
@@ -700,7 +870,7 @@ namespace supremacy::hacks {
 				}
 			}
 
-			if (point.m_intersections > best_point->m_intersections)
+			if (point.m_intersections_120 > best_point->m_intersections_120)
 				best_point = &point;
 		}
 
@@ -722,8 +892,9 @@ namespace supremacy::hacks {
 				const auto& best_pen_data = target.m_best_point->m_pen_data;
 				const auto& pen_data = point.m_pen_data;
 
-				auto v31 = point.m_intersections > target.m_best_point->m_intersections;
-				if (!v31)
+				auto v31 = point.m_intersections_120 > target.m_best_point->m_intersections_120;
+				if (point.m_intersections_120 == target.m_best_point->m_intersections_120
+					|| (std::abs(best_pen_data.m_dmg - pen_data.m_dmg) > 1 && (pen_data.m_dmg <= hp || best_pen_data.m_dmg <= hp)))
 					v31 = pen_data.m_dmg > best_pen_data.m_dmg;
 
 				if (v31)
@@ -738,8 +909,9 @@ namespace supremacy::hacks {
 					const auto& best_pen_data = target.m_best_body_point->m_pen_data;
 					const auto& pen_data = point.m_pen_data;
 
-					auto v31 = point.m_intersections > target.m_best_body_point->m_intersections;
-					if (!v31)
+					auto v31 = point.m_intersections_120 > target.m_best_body_point->m_intersections_120;
+					if (point.m_intersections_120 == target.m_best_body_point->m_intersections_120
+						|| (std::abs(best_pen_data.m_dmg - pen_data.m_dmg) > 1 && (pen_data.m_dmg <= hp || best_pen_data.m_dmg <= hp)))
 						v31 = pen_data.m_dmg > best_pen_data.m_dmg;
 
 					if (v31)
@@ -822,7 +994,23 @@ namespace supremacy::hacks {
 	}
 
 	std::optional< aim_record_t > c_aim_bot::extrapolate(const player_entry_t& entry) const {
+		if (entry.m_lag_records.empty())
+			return std::nullopt;
+
 		const auto& latest = entry.m_lag_records.back();
+
+		// todo: simv0l - make it properly
+#if 1
+		latest->m_extrapolated = true;
+		return aim_record_t{ const_cast<player_entry_t*>(&entry), latest };
+#endif
+		const auto sim_ticks = valve::to_ticks(latest->m_sim_time - latest->m_old_sim_time);
+		if (sim_ticks < 0
+			|| sim_ticks > 20
+			|| latest->m_dormant
+			|| latest->m_sim_tick_delta <= 0)
+			return std::nullopt;
+
 		const auto time_delta = g_lag_comp->calc_time_delta(latest->m_sim_time);
 		if (time_delta < 0.2f) {
 			aim_record_t ret{ const_cast<player_entry_t*>(&entry), latest };
@@ -837,15 +1025,15 @@ namespace supremacy::hacks {
 		const auto& net_info = g_context->net_info();
 
 		const auto latency_ticks = valve::to_ticks(net_info.m_latency.m_in + net_info.m_latency.m_out);
-		const auto delta = (delay + valve::g_client_state->m_server_tick + latency_ticks - latest->m_receive_tick) / latest->m_sim_ticks;
+		const auto delta = (delay + valve::g_client_state->m_server_tick + latency_ticks - latest->m_receive_tick) / latest->m_sim_tick_delta;
 		if (delta <= 0
-			|| delta > 17) {
+			|| delta > 20) {
 			aim_record_t ret{ const_cast<player_entry_t*>(&entry), latest };
 
 			return ret;
 		}
 
-		const auto max = valve::to_ticks(time_delta - 0.2f) / latest->m_sim_ticks;
+		const auto max = valve::to_ticks(time_delta - 0.2f) / latest->m_sim_tick_delta;
 
 		auto extrapolate_ticks = std::min(delta, max);
 		if (extrapolate_ticks <= 0) {
@@ -859,7 +1047,7 @@ namespace supremacy::hacks {
 		extrapolation_data_t data{ entry.m_player, latest.get() };
 
 		do {
-			for (int i{}; i < latest->m_sim_ticks; ++i) {
+			for (int i{}; i < latest->m_sim_tick_delta; ++i) {
 				data.m_sim_time += valve::g_global_vars->m_interval_per_tick;
 				player_move(data);
 			}
@@ -879,7 +1067,7 @@ namespace supremacy::hacks {
 
 		const auto origin_delta = data.m_origin - latest->m_origin;
 
-		for (auto& anim_side : ret.m_lag_record->m_sides)
+		for (auto& anim_side : ret.m_lag_record->m_anim_sides)
 			for (std::size_t i{}; i < anim_side.m_bones_count; ++i) {
 				auto& bone = anim_side.m_bones.at(i);
 
@@ -895,36 +1083,19 @@ namespace supremacy::hacks {
 		if (entry.m_lag_records.empty())
 			return std::nullopt;
 
-		for (auto i = entry.m_lag_records.rbegin(); i != entry.m_lag_records.rend(); i = std::next(i)) {
-			const auto& lag_record = *i;
-			if (lag_record->m_dormant
-				|| !lag_record->valid())
-				continue;
-
-			aim_record_t ret{ const_cast<player_entry_t*>(&entry), lag_record };
-
-			return ret;
-		}
-
-		return std::nullopt;
-	}
-
-	std::optional< aim_record_t > c_aim_bot::select_oldest_record(const player_entry_t& entry) const {
-		if (entry.m_lag_records.empty())
+		const auto& latest = entry.m_lag_records.back();
+		const auto sim_ticks = valve::to_ticks(latest->m_sim_time - latest->m_old_sim_time);
+		if (sim_ticks <= 0
+			|| sim_ticks >= 20
+			|| latest->m_dormant
+			|| !latest->valid()
+			|| latest->m_old_sim_time <= 0.f
+			|| latest->m_old_sim_time >= latest->m_sim_time)
 			return std::nullopt;
 
-		for (auto i = entry.m_lag_records.begin(); i != entry.m_lag_records.end(); i = std::next(i)) {
-			const auto& lag_record = *i;
-			if (lag_record->m_dormant
-				|| !lag_record->valid())
-				continue;
+		aim_record_t ret{ const_cast<player_entry_t*>(&entry), latest };
 
-			aim_record_t ret{ const_cast<player_entry_t*>(&entry), lag_record };
-
-			return ret;
-		}
-
-		return std::nullopt;
+		return ret;
 	}
 
 	std::optional< aim_record_t > c_aim_bot::select_record(const player_entry_t& entry) const {
@@ -940,39 +1111,6 @@ namespace supremacy::hacks {
 		if (!hitbox_set
 			|| hitbox_set->m_hitboxes_count <= 0)
 			return std::nullopt;
-
-		const auto& latest = entry.m_lag_records.back();
-		if (latest->m_dormant)
-			return std::nullopt;
-
-		if (!g_context->cvars().m_cl_lagcompensation->get_bool())
-			return extrapolate(entry);		
-
-		if (entry.m_lag_records.size() == 1u
-			|| !sdk::g_config_system->lag_compensation)
-			return select_latest_record(entry);
-
-		if (latest->m_broke_lc) {
-			int delay{};
-
-			if (g_movement->should_fake_duck())
-				delay = 15 - valve::g_client_state->m_choked_cmds;			
-
-			const auto v17 = std::clamp(
-				valve::to_ticks(
-					(
-						(valve::to_time(delay) + g_context->net_info().m_latency.m_out)
-						+ valve::g_global_vars->m_real_time
-						) - entry.m_receive_time
-				),
-				0, 100
-			);
-
-			if ((v17 - valve::to_ticks(latest->m_sim_time - latest->m_old_sim_time)) >= 0)
-				return std::nullopt;
-
-			return extrapolate(entry);
-		}
 
 		int cfg_hitgroups{};
 		for (std::size_t i{}; i < 6u; ++i) {
@@ -995,9 +1133,18 @@ namespace supremacy::hacks {
 		std::shared_ptr< lag_record_t > best_record{};
 		std::size_t scanned_count{};
 
+		auto breaking_lc = false;
 		const auto hp = entry.m_player->health();
 		for (auto i = entry.m_lag_records.rbegin(); i != entry.m_lag_records.rend(); i = std::next(i)) {
 			const auto& lag_record = *i;
+
+			if (!g_context->cvars().m_cl_lagcompensation->get_bool() || breaking_lc)
+				break;
+
+			if (lag_record->m_shifting)
+				continue;
+
+			breaking_lc = lag_record->m_broke_lc;
 
 			if (!lag_record->valid())
 				continue;			
@@ -1015,20 +1162,25 @@ namespace supremacy::hacks {
 
 				scan_center_points(target, hitgroups);
 
-				if (!select_points(target))
+				if (!select_points(target)) {
+					if (!best_record)
+						best_record = lag_record;
+
 					continue;
+				}
 
 				if (!best_record
 					|| !best_point.has_value()) {
 					best_record = lag_record;
 					best_point = *target.m_best_point;
+
 					continue;
 				}
 
 				if (!target.m_best_point->m_valid
 					|| !target.m_best_point->m_pen_data.m_dmg) {
-					if ((best_record->m_origin - lag_record->m_origin).length_sqr() > 1.f)
-						continue;
+					if ((best_record->m_origin - lag_record->m_origin).length_sqr() > 1.f) 
+						continue;					
 				}
 
 				if (lag_record->m_shot != best_record->m_shot) {
@@ -1058,21 +1210,21 @@ namespace supremacy::hacks {
 					continue;
 				}
 
-				if (target.m_best_point->m_intersections == 3
-					&& target.m_best_point->m_intersections != best_point.value().m_intersections) {
+				if (target.m_best_point->m_intersections_120 == 3
+					&& target.m_best_point->m_intersections_120 != best_point.value().m_intersections_120) {
 					best_record = lag_record;
 					best_point = *target.m_best_point;
 
 					continue;
 				}
-
+				
 				if ((lag_record->m_flags & valve::e_ent_flags::on_ground)
 					&& !lag_record->m_shot
 					&& !lag_record->m_throw
 					&& lag_record->m_side
-					&& lag_record->m_side < 3) {
-					if (target.m_best_point->m_intersections != best_point.value().m_intersections) {
-						if (target.m_best_point->m_intersections > best_point.value().m_intersections) {
+					&& lag_record->m_side < 5) {
+					if (target.m_best_point->m_intersections_120 != best_point.value().m_intersections_120) {
+						if (target.m_best_point->m_intersections_120 > best_point.value().m_intersections_120) {
 							best_record = lag_record;
 							best_point = *target.m_best_point;
 						}
@@ -1081,16 +1233,16 @@ namespace supremacy::hacks {
 					}
 				}
 				else {
-					if (target.m_best_point->m_low_intersections != best_point.value().m_low_intersections) {
-						if (target.m_best_point->m_low_intersections > best_point.value().m_low_intersections) {
+					if (target.m_best_point->m_intersections_15 != best_point.value().m_intersections_15) {
+						if (target.m_best_point->m_intersections_15 > best_point.value().m_intersections_15) {
 							best_record = lag_record;
 							best_point = *target.m_best_point;
 						}
 
 						continue;
 					}
-				}
-			
+				}	
+
 				const auto& pen_data = target.m_best_point->m_pen_data;
 				const auto& best_pen_data = best_point.value().m_pen_data;
 
@@ -1115,8 +1267,8 @@ namespace supremacy::hacks {
 
 		lag_backup.restore(entry.m_player);
 
-		if (!best_record)
-			return std::nullopt;
+		if (!entry.m_lag_records.empty() && !entry.m_lag_records.back()->m_dormant && !best_record)
+			return extrapolate(entry);
 
 		aim_record_t ret{ const_cast<player_entry_t*>(&entry), best_record };
 
@@ -1150,7 +1302,7 @@ namespace supremacy::hacks {
 			return target.m_best_body_point;
 
 		if (sdk::g_config_system->body_aim_conditions[1]
-			&& target.m_best_point->m_intersections < sdk::g_config_system->safe_point_type + 2)
+			&& target.m_best_point->m_intersections_120 < sdk::g_config_system->safe_point_type + 2)
 			return target.m_best_body_point;
 
 		if (sdk::g_config_system->body_aim_conditions[2]) {
@@ -1197,7 +1349,7 @@ namespace supremacy::hacks {
 		}
 
 		if (sdk::g_config_system->body_aim_conditions[5]
-			&& target.m_best_point->m_intersections < target.m_best_body_point->m_intersections)
+			&& target.m_best_point->m_intersections_120 < target.m_best_body_point->m_intersections_120)
 			return target.m_best_body_point;
 
 		if (sdk::g_config_system->body_aim_conditions[6]
@@ -1242,7 +1394,7 @@ namespace supremacy::hacks {
 		}
 	
 		for (auto& target : g_aim_bot->m_targets)
-			g_aim_bot->scan_points(target, m_hitgroups, m_multi_points, true, false);
+			g_aim_bot->scan_points(target, m_hitgroups, m_multi_points, true, false, false);
 
 		g_aim_bot->m_targets.erase(
 			std::remove_if(
@@ -1292,7 +1444,7 @@ namespace supremacy::hacks {
 			const auto& pen_data = it->m_best_point->m_pen_data;
 
 			if (lag->m_broke_lc == best_lag->m_broke_lc) {
-				if (it->m_best_point->m_intersections == best_target->m_best_point->m_intersections) {
+				if (it->m_best_point->m_intersections_120 == best_target->m_best_point->m_intersections_120) {
 					if (lag->m_priority == best_lag->m_priority) {
 						if (pen_data.m_dmg > hp)
 							best_target = &*it;
@@ -1305,7 +1457,7 @@ namespace supremacy::hacks {
 					else if (lag->m_priority < best_lag->m_priority)
 						best_target = &*it;
 				}
-				else if (it->m_best_point->m_intersections > best_target->m_best_point->m_intersections)
+				else if (it->m_best_point->m_intersections_120 > best_target->m_best_point->m_intersections_120)
 					best_target = &*it;
 			}
 			else if (!lag->m_broke_lc)
@@ -1425,8 +1577,6 @@ namespace supremacy::hacks {
 		if (!g_context->weapon() || !g_context->wpn_data())
 			return;
 
-		m_is_peeking = peek_correction();
-
 		const auto item_index = g_context->weapon()->item_index();
 		if (!(sdk::g_config_system->enabled
 			&& key_handler::check_key(sdk::g_config_system->enabled_key, sdk::g_config_system->enabled_key_style)
@@ -1462,7 +1612,6 @@ namespace supremacy::hacks {
 		target->m_lag_record->restore(target->m_entry->m_player, target->m_lag_record->m_side);
 
 		qangle_t angle{};
-
 		math::vector_angles(point->m_pos - g_context->shoot_pos(), angle);
 
 		if (const auto anim_state = valve::g_local_player->anim_state()) {
@@ -1523,7 +1672,7 @@ namespace supremacy::hacks {
 
 				if (user_cmd.m_buttons & valve::e_buttons::in_attack) {
 					user_cmd.m_tick = valve::to_ticks(target->m_lag_record->m_sim_time + g_context->net_info().m_lerp);
-
+				
 					m_last_target.m_entry = target->m_entry;
 					m_last_target.m_lag_record = target->m_lag_record;
 					m_last_target.m_hitbox = point->m_hitbox;
@@ -1533,50 +1682,11 @@ namespace supremacy::hacks {
 
 					g_context->flags() |= e_context_flags::aim_fire;
 				}
-#if 0
-				g_visuals->add_shot_mdl(target->m_entry->m_player, target->m_lag_record);
-#endif
 			}
 		}
 
 		lag_backup.restore(target->m_entry->m_player);
 
 		m_targets.clear();
-	}
-
-	bool c_aim_bot::peek_correction() const {
-		bool player_found = false;
-		vec3_t backup_shoot_pos = g_context->shoot_pos();
-		g_context->shoot_pos() += valve::g_local_player->velocity() * valve::g_global_vars->m_interval_per_tick * 3.f;
-
-		for (auto i = 0; i < valve::g_global_vars->m_max_clients; ++i) {
-			const auto& entry = g_lag_comp->entry(i);
-
-			if (!entry.m_player || entry.m_player->dormant() || !entry.m_player->alive() || entry.m_player->immune() || entry.m_player->friendly())
-				continue;
-
-			if (entry.m_lag_records.empty())
-				continue;
-
-			auto& lag_record = entry.m_lag_records.back();
-
-			if (!lag_record)
-				continue;
-
-			aim_target_t target{};
-
-			target.m_entry = const_cast<player_entry_t*>(&entry);
-			target.m_lag_record = lag_record;
-
-			scan_points(target, (1 << 1 | 1 << 3 | 1 << 4), (1 << 1 | 1 << 3 | 1 << 4), true, true);
-
-			if (g_aim_bot->select_points(target)) {
-				player_found = true;
-				break;
-			}
-		}
-
-		g_context->shoot_pos() = backup_shoot_pos;
-		return player_found;
 	}
 }

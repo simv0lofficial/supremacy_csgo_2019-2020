@@ -611,7 +611,6 @@ namespace sdk {
 		g_config_system->push_item(&g_config_system->conditions[1], "other", "conditions_1", g_config_system->conditions[1]);
 		g_config_system->push_item(&g_config_system->conditions[2], "other", "conditions_2", g_config_system->conditions[2]);
 		g_config_system->push_item(&g_config_system->factor_limit, "other", "factor_limit", g_config_system->factor_limit);
-		g_config_system->push_item(&g_config_system->force_when_peeking, "other", "force_when_peeking", g_config_system->force_when_peeking);
 		g_config_system->push_item(&g_config_system->hide_shots, "other", "hide_shots", g_config_system->hide_shots);
 		g_config_system->push_item(&g_config_system->hide_shots_key, "other", "hide_shots_key", g_config_system->hide_shots_key);
 		g_config_system->push_item(&g_config_system->hide_shots_key_style, "other", "hide_shots_key_style", g_config_system->hide_shots_key_style);
@@ -1138,7 +1137,7 @@ namespace sdk {
 		ui::SetNextWindowPos(posDouble(0));
 		ui::BeginChild("presets", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y - 80 - 27)); {
 
-			ui::ListBoxHeader("##cfglist", ImVec2(-1, -1 - 50 + 31 - 145 - 20 - 20));
+			ui::ListBoxHeader("##cfglist");
 
 			for (auto cfg : config_files)
 				if (ui::Selectable(cfg.c_str(), cfg == selected_cfg))

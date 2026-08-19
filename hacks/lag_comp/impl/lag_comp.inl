@@ -55,7 +55,7 @@ namespace supremacy::hacks {
 			player->set_collision_bounds(m_obb_min, m_obb_max);
 		}
 
-		const auto& anim_side = anim_index < 3 ? m_sides.at(anim_index) : m_low_sides.at(anim_index - 3);
+		const auto& anim_side = m_anim_sides.at(anim_index);
 		player->set_abs_angles({ 0.f, anim_side.m_foot_yaw, 0.f });
 
 		std::memcpy(
@@ -70,34 +70,20 @@ namespace supremacy::hacks {
 
 	__forceinline bool lag_record_t::valid() const {
 		if (!g_context->cvars().m_cl_lagcompensation->get_bool())
-			return true;
-
-		if (m_broke_lc
-			|| m_shifting)
 			return false;
+
+		if (g_lag_comp->calc_time_delta(m_sim_time) > 0.2f)
+			return false;		
 
 		const auto& net_info = g_context->net_info();
-
-		int delay{};
-		if (g_movement->should_fake_duck())
-			delay = 15 - valve::g_client_state->m_choked_cmds;
-
-		const auto last_server_tick = net_info.m_server_tick + delay;
-		const auto rtt = net_info.m_latency.m_in + net_info.m_latency.m_out;
-		const auto possible_future_tick = last_server_tick + valve::to_ticks(rtt) + 8;
-		const auto sv_maxunlag = g_context->cvars().m_sv_maxunlag->get_float();
-		const auto deadtime = static_cast<int>(valve::to_time(last_server_tick) + rtt - sv_maxunlag);
-
-		if (m_sim_time <= static_cast<float>(deadtime) || valve::to_ticks(m_sim_time + net_info.m_lerp) > possible_future_tick)
-			return false;
-
-		return g_lag_comp->calc_time_delta(m_sim_time) < 0.2f;
+		const auto latency_ticks = std::max(0, valve::to_ticks(net_info.m_latency.m_out));
+		const auto dead_time = static_cast<int>(valve::to_time(valve::g_global_vars->m_tick_count + latency_ticks) - g_context->cvars().m_sv_maxunlag->get_float());
+		return m_sim_time >= static_cast<float>(dead_time);
 	}
 
 	__forceinline void player_entry_t::reset() {
 		m_player = nullptr;
 
-		m_alive_loop_cycle = -1.f;
 		m_highest_simtime = -1.f;
 		m_render_origin = {};
 		m_misses = 0;
@@ -105,7 +91,6 @@ namespace supremacy::hacks {
 		m_trace_side = 0;
 		m_prev_type = 0;
 		m_try_lby_resolver = true;
-		m_try_trace_resolver = true;
 		m_try_anim_resolver = true;
 
 		m_lag_records.clear();
@@ -113,17 +98,17 @@ namespace supremacy::hacks {
 
 	__forceinline float c_lag_comp::calc_time_delta(const float sim_time) const {
 		const auto& net_info = g_context->net_info();
-
 		const auto correct = std::clamp(
 			net_info.m_lerp + net_info.m_latency.m_in + net_info.m_latency.m_out,
 			0.f, g_context->cvars().m_sv_maxunlag->get_float()
 		);
 
 		auto tick_base = valve::g_local_player->tick_base();
-		if (g_exploits->next_shift_amount() > 0)
+		if (g_exploits->next_shift_amount() > 0
+			&& !g_exploits->break_lc())
 			tick_base -= g_exploits->next_shift_amount();
 
-		return fabs(correct - (valve::to_time(tick_base) - sim_time));
+		return std::abs(correct - (valve::to_time(tick_base) - sim_time));
 	}
 
 	__forceinline player_entry_t& c_lag_comp::entry(const std::size_t i) { return m_entries.at(i); }
