@@ -1,6 +1,113 @@
 #include "../../../supremacy.hpp"
 
 namespace supremacy::hacks {
+	void c_lag_comp::on_post_data_update(valve::c_player* player) {
+		auto& entry = m_entries.at(player->index() - 1);
+
+		if (player == valve::g_local_player) {
+			entry.reset();
+
+			g_visuals->send_net_data(player);
+			return;
+		}
+
+		if (entry.m_player != player)
+			entry.reset();
+
+		entry.m_player = player;
+
+		if (!player
+			|| !player->alive()) {
+			entry.reset();
+
+			return;
+		}
+
+		if (player->dormant()) {
+			entry.m_try_lby_resolver = true;
+			entry.m_try_anim_resolver = true;
+			entry.m_misses = entry.m_trace_side = 0;
+			entry.m_left_dormancy = true;
+
+			if (entry.m_lag_records.empty()) {
+				entry.m_lag_records.emplace_back(
+					std::make_shared< lag_record_t >(player)
+				);
+
+				return;
+			}
+
+			if (!entry.m_lag_records.back()->m_dormant) {
+				entry.m_lag_records.clear();
+
+				entry.m_lag_records.emplace_back(
+					std::make_shared< lag_record_t >(player)
+				);
+
+				return;
+			}
+
+			return;
+		}
+
+		g_visuals->send_net_data(player);
+
+		const auto anim_state = player->anim_state();
+		if (!anim_state) {
+			entry.reset();
+
+			return;
+		}
+
+		auto equals = true;
+		const auto anim_layers = player->anim_layers();
+		for (auto i = 0u; i < anim_layers.size(); i++) {
+			if (anim_layers.at(i) != entry.m_anim_layers[i]) {
+				equals = false;
+				break;
+			}
+		}
+
+		if (equals)
+			return;
+
+		while (entry.m_lag_records.size() > valve::to_ticks(1.f))
+			entry.m_lag_records.pop_front();
+
+		entry.m_anim_layers = anim_layers;
+		entry.m_receive_time = valve::g_global_vars->m_real_time;
+		entry.m_render_origin = player->origin();
+
+		if (entry.m_spawn_time != player->spawn_time()) {
+			anim_state->reset();
+
+			entry.m_try_lby_resolver = entry.m_try_anim_resolver = true;
+			entry.m_misses = entry.m_prev_side = entry.m_trace_side = 0;
+
+			entry.m_lag_records.clear();
+		}
+
+		entry.m_spawn_time = player->spawn_time();
+
+		lag_record_t* previous = nullptr;
+		lag_record_t* penultimate = nullptr;
+
+		if (!entry.m_lag_records.empty()) {
+			previous = entry.m_lag_records.back().get();
+
+			if (entry.m_lag_records.size() > 1)
+				penultimate = entry.m_lag_records.at(entry.m_lag_records.size() - 2).get();
+		}
+
+		const auto current = entry.m_lag_records.emplace_back(
+			std::make_shared< lag_record_t >(player)
+		).get();
+
+		g_anim_sync->on_net_update(entry, current, previous, penultimate);
+
+		entry.m_left_dormancy = false;
+	}
+
 	void c_lag_comp::on_net_update() {
 		const auto tick_rate = valve::to_ticks(1.f);
 
@@ -66,15 +173,10 @@ namespace supremacy::hacks {
 				continue;
 			}
 
-			if (player->sim_time() == player->old_sim_time())
-				continue;
-
 			auto equals = true;
 			const auto anim_layers = player->anim_layers();
-			for (auto i = 0u; i < anim_layers.size(); i++)
-			{
-				if (anim_layers.at(i) != entry.m_anim_layers[i])
-				{
+			for (auto i = 0u; i < anim_layers.size(); i++) {
+				if (anim_layers.at(i) != entry.m_anim_layers[i]) {
 					equals = false;
 					break;
 				}
@@ -83,7 +185,10 @@ namespace supremacy::hacks {
 			if (equals)
 				continue;
 
-			entry.m_anim_layers = anim_layers;		
+			while (entry.m_lag_records.size() > tick_rate)
+				entry.m_lag_records.pop_front();
+
+			entry.m_anim_layers = anim_layers;
 			entry.m_receive_time = valve::g_global_vars->m_real_time;
 			entry.m_render_origin = player->origin();
 
@@ -113,9 +218,6 @@ namespace supremacy::hacks {
 			).get();
 
 			g_anim_sync->on_net_update(entry, current, previous, penultimate);
-
-			while (entry.m_lag_records.size() > tick_rate)
-				entry.m_lag_records.pop_front();
 
 			entry.m_left_dormancy = false;
 		}

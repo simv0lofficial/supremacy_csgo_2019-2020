@@ -757,7 +757,7 @@ namespace supremacy::valve {
 
 		char			pad0[ 4u ]{};
 		cvar_t*			m_next{};
-		int				m_registered{};
+		std::uint32_t   m_orig_flags{};
 		const char*		m_name{};
 		const char*		m_help_str{};
 		std::uint32_t	m_flags{};

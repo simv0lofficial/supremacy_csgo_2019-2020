@@ -1105,13 +1105,6 @@ namespace supremacy::hooks
 							&& aim_target.m_lag_record
 							&& aim_target.m_entry->m_player)
 							if (const auto player_info = valve::g_engine->player_info(aim_target.m_entry->m_player->index()); player_info.has_value()) {
-								const auto zero_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_zero_rate) * 1000.f;
-								const auto negative_15_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_15_rate) * 1000.f;
-								const auto positive_15_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_15_rate) * 1000.f;
-								const auto negative_30_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_30_rate) * 1000.f;
-								const auto positive_30_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_30_rate) * 1000.f;
-								const auto negative_120_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_negative_120_rate) * 1000.f;
-								const auto positive_120_delta = abs(aim_target.m_lag_record->m_server_rate - aim_target.m_lag_record->m_positive_120_rate) * 1000.f;
 #ifdef ALPHA
 								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | ex: %s | choked: %d)\n"),
@@ -1126,28 +1119,8 @@ namespace supremacy::hooks
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									util::bool_as_text(aim_target.m_lag_record->m_shifting),
-									aim_target.m_lag_record->m_sim_tick_delta - 1
+									aim_target.m_lag_record->m_sim_ticks - 1
 								);
-
-								if (ANIMATIONLOGS) {
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
-								}
 #else
 #ifdef _DEBUG
 								util::g_notify->print_logo();
@@ -1163,28 +1136,8 @@ namespace supremacy::hooks
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									util::bool_as_text(aim_target.m_lag_record->m_shifting),
-									aim_target.m_lag_record->m_sim_tick_delta - 1
+									aim_target.m_lag_record->m_sim_ticks - 1
 								);
-
-								if (ANIMATIONLOGS) {
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
-								}
 #else
 								if (g_context->debug_build) {
 									util::g_notify->print_logo();
@@ -1200,28 +1153,8 @@ namespace supremacy::hooks
 										aim_target.m_lag_record->m_side,
 										util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 										util::bool_as_text(aim_target.m_lag_record->m_shifting),
-										aim_target.m_lag_record->m_sim_tick_delta - 1
+										aim_target.m_lag_record->m_sim_ticks - 1
 									);
-
-									if (ANIMATIONLOGS) {
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("\n"));
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("server rate: %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 rate: %.4f | +120 rate: %.4f | 0 rate: %.4f\n"), aim_target.m_lag_record->m_negative_120_rate * 1000.f, aim_target.m_lag_record->m_positive_120_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 rate: %.4f | +30 rate: %.4f\n"), aim_target.m_lag_record->m_negative_30_rate * 1000.f, aim_target.m_lag_record->m_positive_30_rate * 1000.f);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 rate: %.4f | +15 rate: %.4f\n\n"), aim_target.m_lag_record->m_negative_15_rate * 1000.f, aim_target.m_lag_record->m_positive_15_rate * 1000.f);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-120 delta: %.4f | +120 delta: %.4f | 0 delta: %.4f\n"), negative_120_delta, positive_120_delta, zero_delta);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-30 delta: %.4f | +30 delta: %.4f\n"), negative_30_delta, positive_30_delta);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("-15 delta: %.4f | +15 delta: %.4f\n"), negative_15_delta, positive_15_delta);
-										util::g_notify->print_logo();
-										util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("velocity in processing: %d | can solve move: %s\n\n"), aim_target.m_lag_record->m_velocity_in_processing, util::bool_as_text(aim_target.m_lag_record->m_can_solve_move));
-									}
 								}
 #endif
 #endif
@@ -1508,8 +1441,7 @@ namespace supremacy::hooks
 				for (int i{}; i < var_mapping.m_interpolated_entries; ++i)
 					var_mapping.m_entries.at(i).m_needs_to_interpolate = false;
 			}
-#if 0
-			const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
+
 			for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 				const auto player = static_cast<valve::c_player*>(
 					valve::g_entity_list->find_entity(i)
@@ -1520,23 +1452,10 @@ namespace supremacy::hooks
 					|| player == valve::g_local_player)
 					continue;
 
-				auto& entry = hacks::g_lag_comp->entry(i - 1);
-
-				if (player->sim_time() == player->old_sim_time()
-					|| (entry.m_unk = false, correction_ticks == -1)
-					|| std::abs(valve::to_ticks(player->sim_time()) - valve::g_client_state->m_server_tick) <= (correction_ticks + 1)) {
-					if (!entry.m_unk)
-						continue;
-				}
-				else
-					entry.m_unk = true;
-
 				auto& var_mapping = player->var_mapping();
-
 				for (int j{}; j < var_mapping.m_interpolated_entries; ++j)
 					var_mapping.m_entries.at(j).m_needs_to_interpolate = false;
 			}
-#endif
 		}
 
 		orig_frame_stage_notify(stage);
@@ -1591,6 +1510,14 @@ namespace supremacy::hooks
 		}
 			
 		hacks::g_visuals->kill_feed();
+	}
+
+	void __fastcall post_data_update(void* ecx, void* edx, int type) {
+		const auto player = reinterpret_cast<valve::c_player*>(reinterpret_cast<uintptr_t>(ecx) - 8);
+
+		hacks::g_lag_comp->on_post_data_update(player);
+
+		orig_post_data_update(ecx, edx, type);
 	}
 
 	void __fastcall update_client_side_anim(valve::c_player* const ecx, const std::uintptr_t edx) {
@@ -1995,6 +1922,38 @@ namespace supremacy::hooks
 		valve::g_engine->fire_events();
 
 		return ret;
+	}
+
+	void __fastcall level_init_pre_entity(void* ecx, void* edx, char* map_name)	{
+		orig_level_init_pre_entity(ecx, edx, map_name);
+
+		g_context->cvars().m_net_earliertempents->set_int(1);
+		g_context->cvars().m_cl_interp->set_float(0.015625f);
+		g_context->cvars().m_cl_interp_ratio->set_float(2.f);
+		g_context->cvars().m_r_modelAmbientMin->set_float(0.f);
+		g_context->cvars().m_engine_no_focus_sleep->set_int(0);
+		g_context->cvars().m_mat_software_aa_strength->set_float(0.f);
+		g_context->cvars().m_cl_pred_doresetlatch->set_int(0);
+
+		g_context->cvars().m_r_player_visibility_mode->m_flags &= ~(1 << 7); // FCVAR_ARCHIVE
+		g_context->cvars().m_r_player_visibility_mode->m_orig_flags = g_context->cvars().m_r_player_visibility_mode->m_flags | 1;
+		g_context->cvars().m_r_player_visibility_mode->set_int(0);
+
+		g_context->cvars().m_dsp_enhance_stereo->m_flags &= ~(1 << 14); // FCVAR_CHEAT
+		g_context->cvars().m_dsp_enhance_stereo->m_orig_flags = g_context->cvars().m_dsp_enhance_stereo->m_flags | 1;
+		g_context->cvars().m_dsp_slow_cpu->set_int(0);
+
+		g_context->cvars().m_dsp_enhance_stereo->m_flags &= ~(1 << 7); // FCVAR_ARCHIVE
+		g_context->cvars().m_dsp_enhance_stereo->m_orig_flags = g_context->cvars().m_dsp_enhance_stereo->m_flags | 1;
+		g_context->cvars().m_dsp_enhance_stereo->set_int(0);
+
+		if (g_context->cvars().m_rate->get_int() != 786432) {
+			g_context->cvars().m_rate->m_flags &= ~(1 << 7); // FCVAR_ARCHIVE
+			g_context->cvars().m_rate->m_orig_flags = g_context->cvars().m_rate->m_flags | 1;
+			g_context->cvars().m_rate->set_int(786432);
+		}
+
+		g_context->cvars().m_cl_clock_correction->set_int(0);
 	}
 
 	void __fastcall level_shutdown(const std::uintptr_t ecx, const std::uintptr_t edx) {

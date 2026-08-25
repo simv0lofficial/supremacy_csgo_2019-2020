@@ -25,7 +25,9 @@ namespace supremacy::hacks {
 			std::size_t				m_bones_count{};
 			float					m_foot_yaw{}, m_prev_foot_yaw{},
 				m_move_yaw_ideal{}, m_move_yaw_cur_to_ideal{},
-				m_move_yaw{}, m_playback_rate{};
+				m_move_yaw{};
+
+			valve::anim_layers_t	m_anim_layers{};
 		};
 
 		__forceinline constexpr lag_record_t() = default;
@@ -36,9 +38,7 @@ namespace supremacy::hacks {
 			m_flags{ player->flags() },
 			m_sim_time{ player->sim_time() },
 			m_old_sim_time{ player->old_sim_time() },
-			m_sim_tick{ valve::to_ticks(player->sim_time()) },
-			m_old_sim_tick{ valve::to_ticks(player->old_sim_time()) },
-			m_sim_tick_delta{ valve::to_ticks(player->sim_time() - player->old_sim_time()) },
+			m_sim_ticks{ valve::to_ticks(player->sim_time() - player->old_sim_time()) },
 			m_receive_tick{ valve::g_client_state->m_server_tick },
 			m_lby{ player->lby() },
 			m_duck_amount{ player->duck_amount() },
@@ -63,16 +63,15 @@ namespace supremacy::hacks {
 
 		bool							m_dormant{}, m_trying_to_resolve{}, m_broke_lc{},
 			m_shot{}, m_throw{}, m_strafing{}, m_walking{}, m_sideways{}, m_forward{},
-			m_accelerating{}, m_extrapolated{}, m_shifting{}, m_first_after_dormant{}, m_can_solve_move{}, m_should_force_normal_sp{};
+			m_accelerating{}, m_extrapolated{}, m_shifting{}, m_first_after_dormant{}, m_should_force_normal_sp{};
 
 		valve::e_ent_flags				m_flags{};
 		valve::c_weapon* m_weapon{};
 
-		int								m_sim_tick{}, m_old_sim_tick{}, m_sim_tick_delta{}, m_side{}, m_priority{}, m_type{},
-			m_receive_tick{}, m_shot_tick{}, m_extrapolate_ticks{}, m_velocity_in_processing{};
+		int								 m_sim_ticks{}, m_side{}, m_priority{}, m_type{},
+			m_receive_tick{}, m_shot_tick{}, m_extrapolate_ticks{};
 		float							m_sim_time{}, m_old_sim_time{}, m_lby{}, m_duck_amount{}, m_third_person_recoil{}, m_max_delta{},
-			m_last_shot_time{}, m_server_rate{}, m_negative_120_rate{}, m_positive_120_rate{}, m_zero_rate{}, m_negative_30_rate{}, m_positive_30_rate{},
-			m_negative_15_rate{}, m_positive_15_rate{};
+			m_last_shot_time{};
 
 		qangle_t						m_eye_angles{}, m_abs_angles{};
 		vec3_t							m_velocity{}, m_origin{}, m_abs_origin{}, m_obb_min{}, m_obb_max{};
@@ -103,6 +102,9 @@ namespace supremacy::hacks {
 	private:
 		std::array< player_entry_t, 64u > m_entries{};
 	public:
+
+		void on_post_data_update(valve::c_player* player);
+
 		void on_net_update();
 
 		__forceinline float calc_time_delta(const float sim_time) const;

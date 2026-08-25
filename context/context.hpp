@@ -113,9 +113,12 @@ namespace supremacy {
 							*m_cl_fullupdate{}, *m_mp_teammates_are_enemies{}, *m_cl_lagcompensation{},
 							*m_name{}, *m_voice_loopback{}, *m_pitch{}, *m_yaw{}, *m_sensitivity{},
 							*m_mp_damage_scale_t_head{}, *m_mp_damage_scale_t_body{}, *m_mp_damage_scale_ct_head{},
-							*m_mp_damage_scale_ct_body{};
+							*m_mp_damage_scale_ct_body{}, *m_net_earliertempents{}, *m_r_modelAmbientMin{},
+							*m_engine_no_focus_sleep{}, *m_mat_software_aa_strength{}, *m_cl_pred_doresetlatch{},
+							*m_r_player_visibility_mode{}, *m_dsp_slow_cpu{}, *m_dsp_enhance_stereo{}, *m_rate{},
+							*m_cl_clock_correction{};
 		}					m_cvars{};
-
+	
 		struct net_info_t {
 			float	m_lerp{};
 

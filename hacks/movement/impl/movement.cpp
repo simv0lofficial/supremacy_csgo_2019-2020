@@ -81,7 +81,7 @@ namespace supremacy::hacks {
 			|| !(user_cmd.m_buttons & valve::e_buttons::in_speed))
 			v20 = false;
 
-		auto finalwishspeed = std::max(wishspeed, 250.f);
+		auto finalwishspeed = std::max(wishspeed, 260.f);
 		auto abs_finalwishspeed = finalwishspeed;
 
 		const auto weapon = g_context->weapon();
@@ -95,7 +95,7 @@ namespace supremacy::hacks {
 				&& (item_index == 11 || item_index == 38 || item_index == 9 || item_index == 8 || item_index == 39 || item_index == 40))
 				slow_down_to_fast_nigga = (m_max_weapon_speed * 0.52f) < 110.f;
 
-			const auto modifier = std::min(1.f, m_max_weapon_speed / 250.f);
+			const auto modifier = std::min(1.f, m_max_weapon_speed / 260.f);
 
 			abs_finalwishspeed *= modifier;
 
@@ -366,7 +366,7 @@ namespace supremacy::hacks {
 
 		const auto max_weapon_speed = weapon->max_speed();
 
-		auto finalwishspeed = std::min(max_weapon_speed, 250.f);
+		auto finalwishspeed = std::min(max_weapon_speed, 260.f);
 
 		const auto ducking =
 			user_cmd.m_buttons & valve::e_buttons::in_duck
@@ -384,7 +384,7 @@ namespace supremacy::hacks {
 
 			if (!ducking
 				|| slow_down_to_fast_nigga)
-				finalwishspeed *= std::min(1.f, max_weapon_speed / 250.f);
+				finalwishspeed *= std::min(1.f, max_weapon_speed / 260.f);
 		}
 
 		if (ducking
@@ -437,7 +437,7 @@ namespace supremacy::hacks {
 			|| !(valve::g_local_player->flags() & valve::e_ent_flags::on_ground))
 			return false;
 
-		m_max_weapon_speed = 250.f;
+		m_max_weapon_speed = 260.f;
 		if (const auto weapon = g_context->weapon())
 			m_max_weapon_speed = weapon->max_speed();
 
@@ -446,8 +446,6 @@ namespace supremacy::hacks {
 		if (valve::g_local_player->velocity().length_2d_sqr() > 2.f
 			|| !valve::g_local_player->anim_state())
 			return false;
-
-		user_cmd.m_buttons &= ~valve::e_buttons::in_speed;
 
 		float duck_amount{};
 		if (user_cmd.m_buttons & valve::e_buttons::in_duck)
@@ -653,7 +651,7 @@ namespace supremacy::hacks {
 			return;
 
 		m_max_player_speed = valve::g_local_player->max_speed();
-		m_max_weapon_speed = g_context->weapon() ? g_context->weapon()->max_speed() : 250.f;
+		m_max_weapon_speed = g_context->weapon() ? g_context->weapon()->max_speed() : 260.f;
 
 		m_velocity = valve::g_local_player->velocity();
 

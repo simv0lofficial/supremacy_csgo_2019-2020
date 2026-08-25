@@ -444,6 +444,16 @@ namespace supremacy {
 			m_cvars.m_mp_damage_scale_t_body = valve::g_cvar->find_var(xorstr_("mp_damage_scale_t_body"));
 			m_cvars.m_mp_damage_scale_ct_head = valve::g_cvar->find_var(xorstr_("mp_damage_scale_ct_head"));
 			m_cvars.m_mp_damage_scale_ct_body = valve::g_cvar->find_var(xorstr_("mp_damage_scale_ct_body"));
+			m_cvars.m_net_earliertempents = valve::g_cvar->find_var(xorstr_("net_earliertempents"));
+			m_cvars.m_r_modelAmbientMin = valve::g_cvar->find_var(xorstr_("r_modelAmbientMin"));
+			m_cvars.m_engine_no_focus_sleep = valve::g_cvar->find_var(xorstr_("engine_no_focus_sleep"));
+			m_cvars.m_mat_software_aa_strength = valve::g_cvar->find_var(xorstr_("mat_software_aa_strength"));
+			m_cvars.m_cl_pred_doresetlatch = valve::g_cvar->find_var(xorstr_("cl_pred_doresetlatch"));
+			m_cvars.m_r_player_visibility_mode = valve::g_cvar->find_var(xorstr_("r_player_visibility_mode"));
+			m_cvars.m_dsp_slow_cpu = valve::g_cvar->find_var(xorstr_("dsp_slow_cpu"));
+			m_cvars.m_dsp_enhance_stereo = valve::g_cvar->find_var(xorstr_("dsp_enhance_stereo"));
+			m_cvars.m_rate = valve::g_cvar->find_var(xorstr_("rate"));
+			m_cvars.m_cl_clock_correction = valve::g_cvar->find_var(xorstr_("cl_clock_correction"));
 		}
 
 		of_log << "a few useless corrections...\n";
@@ -560,7 +570,16 @@ namespace supremacy {
 				reinterpret_cast<LPVOID*>(&hooks::orig_setup_bones)
 			) != MH_OK)
 				return;
-
+#if 0
+			if (MH_CreateHook(
+				reinterpret_cast<LPVOID>(
+					find_byte_seq(client_code_section, xorstr_("55 8B EC 56 FF 75 08 8B F1 8B 86"))
+					),
+				reinterpret_cast<LPVOID>(&hooks::post_data_update),
+				reinterpret_cast<LPVOID*>(&hooks::orig_post_data_update)
+			) != MH_OK)
+				return;
+#endif
 			if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(client_code_section, xorstr_("55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74"))
@@ -675,6 +694,13 @@ namespace supremacy {
 					),
 				reinterpret_cast<LPVOID>(&hooks::process_temp_entities),
 				reinterpret_cast<LPVOID*>(&hooks::orig_process_temp_entities)
+			) != MH_OK)
+				return;
+
+			if (MH_CreateHook(
+				(*reinterpret_cast<LPVOID**>(valve::g_client))[5u],
+				reinterpret_cast<LPVOID>(&hooks::level_init_pre_entity),
+				reinterpret_cast<LPVOID*>(&hooks::orig_level_init_pre_entity)
 			) != MH_OK)
 				return;
 

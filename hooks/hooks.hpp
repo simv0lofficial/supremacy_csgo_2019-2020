@@ -54,6 +54,9 @@ namespace supremacy::hooks {
 	void __stdcall frame_stage_notify( const valve::e_frame_stage stage );
 	inline decltype( &frame_stage_notify ) orig_frame_stage_notify{};
 
+	void __fastcall post_data_update(void* ecx, void* edx, int type);
+	inline decltype(&post_data_update) orig_post_data_update{};
+
 	void __fastcall update_client_side_anim( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &update_client_side_anim ) orig_update_client_side_anim{};
 
@@ -110,6 +113,9 @@ namespace supremacy::hooks {
 
 	bool __fastcall process_temp_entities( const std::uintptr_t ecx, const std::uintptr_t edx, const std::uintptr_t msg );
 	inline decltype( &process_temp_entities ) orig_process_temp_entities{};
+
+	void __fastcall level_init_pre_entity(void* ecx, void* edx, char* map_name);
+	inline decltype(&level_init_pre_entity) orig_level_init_pre_entity{};
 
 	void __fastcall level_shutdown( const std::uintptr_t ecx, const std::uintptr_t edx );
 	inline decltype( &level_shutdown ) orig_level_shutdown{};

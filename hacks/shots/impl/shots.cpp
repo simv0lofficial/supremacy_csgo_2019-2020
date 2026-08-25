@@ -117,7 +117,7 @@ namespace supremacy::hacks {
 					else {
 						++shot.m_target.m_entry->m_misses;
 
-						if ((!SKIPFAKEPLAYERCHECKS && shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client)
+						if ((shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client)
 							|| shot.m_target.m_point.m_intersections_120 >= 3) {
 #ifdef ALPHA
 							util::g_notify->print_logo();

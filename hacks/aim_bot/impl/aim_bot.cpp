@@ -81,7 +81,7 @@ namespace supremacy::hacks {
 		if (pen.m_dmg < min_dmg)
 			return;	
 
-		if (!SKIPFAKEPLAYERCHECKS && target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
+		if (target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
 			point.m_intersections_120 = 3;
 			point.m_valid = true;
 
@@ -1008,7 +1008,7 @@ namespace supremacy::hacks {
 		if (sim_ticks < 0
 			|| sim_ticks > 20
 			|| latest->m_dormant
-			|| latest->m_sim_tick_delta <= 0)
+			|| latest->m_sim_ticks <= 0)
 			return std::nullopt;
 
 		const auto time_delta = g_lag_comp->calc_time_delta(latest->m_sim_time);
@@ -1025,7 +1025,7 @@ namespace supremacy::hacks {
 		const auto& net_info = g_context->net_info();
 
 		const auto latency_ticks = valve::to_ticks(net_info.m_latency.m_in + net_info.m_latency.m_out);
-		const auto delta = (delay + valve::g_client_state->m_server_tick + latency_ticks - latest->m_receive_tick) / latest->m_sim_tick_delta;
+		const auto delta = (delay + valve::g_client_state->m_server_tick + latency_ticks - latest->m_receive_tick) / latest->m_sim_ticks;
 		if (delta <= 0
 			|| delta > 20) {
 			aim_record_t ret{ const_cast<player_entry_t*>(&entry), latest };
@@ -1033,7 +1033,7 @@ namespace supremacy::hacks {
 			return ret;
 		}
 
-		const auto max = valve::to_ticks(time_delta - 0.2f) / latest->m_sim_tick_delta;
+		const auto max = valve::to_ticks(time_delta - 0.2f) / latest->m_sim_ticks;
 
 		auto extrapolate_ticks = std::min(delta, max);
 		if (extrapolate_ticks <= 0) {
@@ -1047,7 +1047,7 @@ namespace supremacy::hacks {
 		extrapolation_data_t data{ entry.m_player, latest.get() };
 
 		do {
-			for (int i{}; i < latest->m_sim_tick_delta; ++i) {
+			for (int i{}; i < latest->m_sim_ticks; ++i) {
 				data.m_sim_time += valve::g_global_vars->m_interval_per_tick;
 				player_move(data);
 			}
